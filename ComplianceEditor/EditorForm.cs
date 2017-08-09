@@ -14,26 +14,27 @@ namespace Compliance.Editor
     {
         private bool _changedSinceLastSave = false;
         private bool _foundNode = false;
-        private bool _wordMatched = false;
+        //private bool _wordMatched = false;
         private int _closeRecDistanceFromLeft;
         private int _tabItemsDistanceFromTop;
         private string _currentPath;
         private string _openFilePath = string.Empty;
         private string _typed = string.Empty;
 
-        private Assembly _assembly;
-        private Hashtable _dictionaries;
+        //private Assembly _assembly;
+        //private Hashtable _dictionaries;
         private Simple_Tables _simpleTablesInstance = new Simple_Tables();
-        private TreeNode _findNodeResult = null;
+        //private TreeNode _findNodeResult = null;
         private TreeNode _nameSpaceNode;
 
         public EditorForm()
         {
             InitializeComponent();
-            SetUpTab(textBoxTabControl, textBoxTabControl.TabPages.Count - 1);
+            InitializeTabs();
+            //SetUpTab(textBoxTabControl, textBoxTabControl.TabPages.Count - 1);
             InitializeListViews();
             EnableDragDropEvents();
-            LoadAssembly();
+            //LoadAssembly();
         }
 
         private void InitializeTabs()
@@ -329,15 +330,6 @@ namespace Compliance.Editor
             }
         }
 
-        private void CodeTextBox_TextChanged(object sender, EventArgs e)
-        {
-            if (!_changedSinceLastSave)
-            {
-                textBoxTabControl.TabPages[0].Text += "*";
-                _changedSinceLastSave = true;
-            }
-        }
-
         private void NewTabToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenTab(textBoxTabControl, "<New tab>");
@@ -436,19 +428,13 @@ namespace Compliance.Editor
                                                                              .First() as RichTextBox;
         }
 
-        //private TreeView GetTreeView(TabControl tabControl)
+        #region Intellisense
+        //private GListBox GetGListBox(TabControl tabControl)
         //{
         //    var pageIndex = tabControl.SelectedIndex;
-        //    return tabControl.SelectedTab.Controls.Find("treeView" + pageIndex, true)
-        //                                                                     .First() as TreeView;
+        //    return tabControl.SelectedTab.Controls.Find("GListBox" + pageIndex, true)
+        //                                                                     .First() as GListBox;
         //}
-
-        private GListBox GetGListBox(TabControl tabControl)
-        {
-            var pageIndex = tabControl.SelectedIndex;
-            return tabControl.SelectedTab.Controls.Find("GListBox" + pageIndex, true)
-                                                                             .First() as GListBox;
-        }
 
         //private void LoadAssembly() // Rename? Just loads dictionary into tree view hierarchy
         //{
@@ -482,73 +468,73 @@ namespace Compliance.Editor
         //    DebugCallRecursive();
         //}
 
-        private void AddClassDictionariesToTree(Type type)
-        {
-            var instance = Activator.CreateInstance(type);
+        //private void AddClassDictionariesToTree(Type type)
+        //{
+        //    var instance = Activator.CreateInstance(type);
 
-            var instanceVariables = instance.GetType()
-                                                                 .GetFields()
-                                                                 .Select(field => field.GetValue(instance))
-                                                                 .ToList();
+        //    var instanceVariables = instance.GetType()
+        //                                                         .GetFields()
+        //                                                         .Select(field => field.GetValue(instance))
+        //                                                         .ToList();
 
-            foreach (var variable in instanceVariables)
-            {
-                var variableType = variable.GetType();
-                var isDictionary =
-                    variableType.IsGenericType && variableType.GetGenericTypeDefinition() == typeof(Dictionary<,>);
+        //    foreach (var variable in instanceVariables)
+        //    {
+        //        var variableType = variable.GetType();
+        //        var isDictionary =
+        //            variableType.IsGenericType && variableType.GetGenericTypeDefinition() == typeof(Dictionary<,>);
 
-                if (isDictionary)
-                {
-                    var dictionary = (Dictionary<string, string>)null;
+        //        if (isDictionary)
+        //        {
+        //            var dictionary = (Dictionary<string, string>)null;
 
-                    try
-                    {
-                        dictionary = (Dictionary<string, string>)variable;
-                    }
-                    catch (Exception e)
-                    {
-                        MessageBox.Show("Could not build the hashtable required.\nException message: " + e.Message);
-                        return;
-                    }
+        //            try
+        //            {
+        //                dictionary = (Dictionary<string, string>)variable;
+        //            }
+        //            catch (Exception e)
+        //            {
+        //                MessageBox.Show("Could not build the hashtable required.\nException message: " + e.Message);
+        //                return;
+        //            }
 
-                    //ProcessDictionaryItems(dictionary, type);
-                }
-            }
-        }
+        //            ProcessDictionaryItems(dictionary, type);
+        //        }
+        //    }
+        //}
 
-        private int index = 0;
+        //private int index = 0;
 
-        private string[] DebugPrintTreeView(TreeNode treeNode, string[] treeArray, int index)
-        {
-            treeArray[index] = treeNode.Text;
-            index++;
+        //private string[] DebugPrintTreeView(TreeNode treeNode, string[] treeArray, int index)
+        //{
+        //    treeArray[index] = treeNode.Text;
+        //    index++;
 
-            foreach (var tn in treeNode.Nodes)
-            {
-                treeArray = DebugPrintTreeView((TreeNode)tn, treeArray, index);
-            }
+        //    foreach (var tn in treeNode.Nodes)
+        //    {
+        //        treeArray = DebugPrintTreeView((TreeNode)tn, treeArray, index);
+        //    }
 
-            return treeArray;
-        }
+        //    return treeArray;
+        //}
 
-        private void DebugCallRecursive()
-        {
-            var treeArray = new string[20];
-            var nodes = treeViewItems.Nodes;
+        //private void DebugCallRecursive()
+        //{
+        //    var treeArray = new string[20];
+        //    var nodes = treeViewItems.Nodes;
 
-            foreach (var n in nodes)
-            {
-                treeArray = DebugPrintTreeView((TreeNode)n, treeArray, index);
-            }
+        //    foreach (var n in nodes)
+        //    {
+        //        treeArray = DebugPrintTreeView((TreeNode)n, treeArray, index);
+        //    }
 
-            var printString = string.Empty;
-            foreach (var item in treeArray)
-            {
-                printString += "\n" + item;
-            }
+        //    var printString = string.Empty;
+        //    foreach (var item in treeArray)
+        //    {
+        //        printString += "\n" + item;
+        //    }
 
-            MessageBox.Show(printString);
-        }
+        //    MessageBox.Show(printString);
+        //}
 
         //private void AddMembers(TreeNode treeNode, Type type)
         //{
@@ -589,6 +575,15 @@ namespace Compliance.Editor
         //        node.Tag = parms;
         //    }
         //}
+        #endregion
 
+        private void CodeTextBox_TextChanged(object sender, EventArgs e)
+        {
+            if (!_changedSinceLastSave)
+            {
+                textBoxTabControl.TabPages[0].Text += "*";
+                _changedSinceLastSave = true;
+            }
+        }
     }
 }

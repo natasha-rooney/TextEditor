@@ -30,7 +30,6 @@ namespace Compliance.Editor
         /// </summary>
         private void InitializeComponent()
         {
-            this.codeTextBox = new System.Windows.Forms.RichTextBox();
             this.toolsTabControl = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.tableListView = new System.Windows.Forms.ListView();
@@ -38,8 +37,10 @@ namespace Compliance.Editor
             this.nominalListView = new System.Windows.Forms.ListView();
             this.panel1 = new System.Windows.Forms.Panel();
             this.textBoxTabControl = new System.Windows.Forms.TabControl();
-            this.textBoxTabPage1 = new System.Windows.Forms.TabPage();
+            this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.codeTextBox = new System.Windows.Forms.RichTextBox();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.treeViewItems = new System.Windows.Forms.TreeView();
             this.treeView = new System.Windows.Forms.TreeView();
             this.saveAsButton = new System.Windows.Forms.Button();
             this.openButton = new System.Windows.Forms.Button();
@@ -50,29 +51,15 @@ namespace Compliance.Editor
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.treeViewItems = new System.Windows.Forms.TreeView();
             this.toolsTabControl.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
             this.panel1.SuspendLayout();
             this.textBoxTabControl.SuspendLayout();
-            this.textBoxTabPage1.SuspendLayout();
+            this.tabPage3.SuspendLayout();
             this.panel2.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // codeTextBox
-            // 
-            this.codeTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.codeTextBox.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.codeTextBox.Location = new System.Drawing.Point(6, 6);
-            this.codeTextBox.Name = "codeTextBox";
-            this.codeTextBox.Size = new System.Drawing.Size(452, 511);
-            this.codeTextBox.TabIndex = 0;
-            this.codeTextBox.Text = "";
-            this.codeTextBox.TextChanged += new System.EventHandler(this.CodeTextBox_TextChanged);
             // 
             // toolsTabControl
             // 
@@ -146,29 +133,38 @@ namespace Compliance.Editor
             // 
             // textBoxTabControl
             // 
-            this.textBoxTabControl.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBoxTabControl.Controls.Add(this.textBoxTabPage1);
+            this.textBoxTabControl.Controls.Add(this.tabPage3);
             this.textBoxTabControl.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
             this.textBoxTabControl.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxTabControl.Location = new System.Drawing.Point(4, 3);
+            this.textBoxTabControl.Location = new System.Drawing.Point(3, 3);
             this.textBoxTabControl.Name = "textBoxTabControl";
             this.textBoxTabControl.SelectedIndex = 0;
-            this.textBoxTabControl.Size = new System.Drawing.Size(472, 553);
+            this.textBoxTabControl.Size = new System.Drawing.Size(473, 553);
             this.textBoxTabControl.TabIndex = 3;
-            this.textBoxTabControl.Tag = "";
             // 
-            // textBoxTabPage1
+            // tabPage3
             // 
-            this.textBoxTabPage1.Controls.Add(this.codeTextBox);
-            this.textBoxTabPage1.Location = new System.Drawing.Point(4, 26);
-            this.textBoxTabPage1.Name = "textBoxTabPage1";
-            this.textBoxTabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.textBoxTabPage1.Size = new System.Drawing.Size(464, 523);
-            this.textBoxTabPage1.TabIndex = 0;
-            this.textBoxTabPage1.Text = "tabPage3";
-            this.textBoxTabPage1.UseVisualStyleBackColor = true;
+            this.tabPage3.Controls.Add(this.codeTextBox);
+            this.tabPage3.Location = new System.Drawing.Point(4, 26);
+            this.tabPage3.Name = "tabPage3";
+            this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage3.Size = new System.Drawing.Size(465, 523);
+            this.tabPage3.TabIndex = 0;
+            this.tabPage3.Text = "tabPage3";
+            this.tabPage3.UseVisualStyleBackColor = true;
+            // 
+            // codeTextBox
+            // 
+            this.codeTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.codeTextBox.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.codeTextBox.Location = new System.Drawing.Point(6, 6);
+            this.codeTextBox.Name = "codeTextBox";
+            this.codeTextBox.Size = new System.Drawing.Size(453, 511);
+            this.codeTextBox.TabIndex = 6;
+            this.codeTextBox.Text = "";
+            this.codeTextBox.TextChanged += new System.EventHandler(this.CodeTextBox_TextChanged);
             // 
             // panel2
             // 
@@ -184,6 +180,14 @@ namespace Compliance.Editor
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(823, 42);
             this.panel2.TabIndex = 4;
+            // 
+            // treeViewItems
+            // 
+            this.treeViewItems.Location = new System.Drawing.Point(426, 3);
+            this.treeViewItems.Name = "treeViewItems";
+            this.treeViewItems.Size = new System.Drawing.Size(121, 32);
+            this.treeViewItems.TabIndex = 7;
+            this.treeViewItems.Visible = false;
             // 
             // treeView
             // 
@@ -215,7 +219,7 @@ namespace Compliance.Editor
             this.openButton.Name = "openButton";
             this.openButton.Size = new System.Drawing.Size(102, 32);
             this.openButton.TabIndex = 1;
-            this.openButton.Text = "Load";
+            this.openButton.Text = "Open";
             this.openButton.UseVisualStyleBackColor = true;
             this.openButton.Click += new System.EventHandler(this.OpenButton_Click);
             // 
@@ -291,14 +295,6 @@ namespace Compliance.Editor
             this.saveAsToolStripMenuItem.Text = "Save As";
             this.saveAsToolStripMenuItem.Click += new System.EventHandler(this.SaveAsToolStripMenuItem_Click);
             // 
-            // treeViewItems
-            // 
-            this.treeViewItems.Location = new System.Drawing.Point(426, 3);
-            this.treeViewItems.Name = "treeViewItems";
-            this.treeViewItems.Size = new System.Drawing.Size(121, 32);
-            this.treeViewItems.TabIndex = 7;
-            this.treeViewItems.Visible = false;
-            // 
             // EditorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -317,7 +313,7 @@ namespace Compliance.Editor
             this.tabPage2.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
             this.textBoxTabControl.ResumeLayout(false);
-            this.textBoxTabPage1.ResumeLayout(false);
+            this.tabPage3.ResumeLayout(false);
             this.panel2.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
@@ -327,8 +323,6 @@ namespace Compliance.Editor
         }
 
         #endregion
-
-        private System.Windows.Forms.RichTextBox codeTextBox;
         private System.Windows.Forms.TabControl toolsTabControl;
         private System.Windows.Forms.TabPage tabPage1;
         private System.Windows.Forms.TabPage tabPage2;
@@ -336,8 +330,6 @@ namespace Compliance.Editor
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.Button openButton;
         private System.Windows.Forms.Button saveButton;
-        private System.Windows.Forms.TabControl textBoxTabControl;
-        private System.Windows.Forms.TabPage textBoxTabPage1;
         private System.Windows.Forms.Button saveAsButton;
         private System.Windows.Forms.ListView tableListView;
         private System.Windows.Forms.ListView nominalListView;
@@ -349,6 +341,9 @@ namespace Compliance.Editor
         private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem saveAsToolStripMenuItem;
         private TreeView treeViewItems;
+        private TabControl textBoxTabControl;
+        private TabPage tabPage3;
+        private RichTextBox codeTextBox;
     }
 }
 
