@@ -36,9 +36,8 @@ namespace Compliance.Editor
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.nominalListView = new System.Windows.Forms.ListView();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.textBoxTabControl = new System.Windows.Forms.TabControl();
+            this.textEditorTabControl = new System.Windows.Forms.TabControl();
             this.tabPage3 = new System.Windows.Forms.TabPage();
-            this.codeTextBox = new System.Windows.Forms.RichTextBox();
             this.panel2 = new System.Windows.Forms.Panel();
             this.treeViewItems = new System.Windows.Forms.TreeView();
             this.treeView = new System.Windows.Forms.TreeView();
@@ -55,8 +54,7 @@ namespace Compliance.Editor
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
             this.panel1.SuspendLayout();
-            this.textBoxTabControl.SuspendLayout();
-            this.tabPage3.SuspendLayout();
+            this.textEditorTabControl.SuspendLayout();
             this.panel2.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -124,7 +122,7 @@ namespace Compliance.Editor
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.panel1.Controls.Add(this.textBoxTabControl);
+            this.panel1.Controls.Add(this.textEditorTabControl);
             this.panel1.Controls.Add(this.toolsTabControl);
             this.panel1.Location = new System.Drawing.Point(13, 28);
             this.panel1.Name = "panel1";
@@ -133,18 +131,17 @@ namespace Compliance.Editor
             // 
             // textBoxTabControl
             // 
-            this.textBoxTabControl.Controls.Add(this.tabPage3);
-            this.textBoxTabControl.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
-            this.textBoxTabControl.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxTabControl.Location = new System.Drawing.Point(3, 3);
-            this.textBoxTabControl.Name = "textBoxTabControl";
-            this.textBoxTabControl.SelectedIndex = 0;
-            this.textBoxTabControl.Size = new System.Drawing.Size(473, 553);
-            this.textBoxTabControl.TabIndex = 3;
+            this.textEditorTabControl.Controls.Add(this.tabPage3);
+            this.textEditorTabControl.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
+            this.textEditorTabControl.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textEditorTabControl.Location = new System.Drawing.Point(3, 3);
+            this.textEditorTabControl.Name = "textBoxTabControl";
+            this.textEditorTabControl.SelectedIndex = 0;
+            this.textEditorTabControl.Size = new System.Drawing.Size(473, 553);
+            this.textEditorTabControl.TabIndex = 3;
             // 
             // tabPage3
             // 
-            this.tabPage3.Controls.Add(this.codeTextBox);
             this.tabPage3.Location = new System.Drawing.Point(4, 26);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
@@ -152,19 +149,6 @@ namespace Compliance.Editor
             this.tabPage3.TabIndex = 0;
             this.tabPage3.Text = "tabPage3";
             this.tabPage3.UseVisualStyleBackColor = true;
-            // 
-            // codeTextBox
-            // 
-            this.codeTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.codeTextBox.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.codeTextBox.Location = new System.Drawing.Point(6, 6);
-            this.codeTextBox.Name = "codeTextBox";
-            this.codeTextBox.Size = new System.Drawing.Size(453, 511);
-            this.codeTextBox.TabIndex = 6;
-            this.codeTextBox.Text = "";
-            this.codeTextBox.TextChanged += new System.EventHandler(this.CodeTextBox_TextChanged);
             // 
             // panel2
             // 
@@ -312,8 +296,7 @@ namespace Compliance.Editor
             this.tabPage1.ResumeLayout(false);
             this.tabPage2.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
-            this.textBoxTabControl.ResumeLayout(false);
-            this.tabPage3.ResumeLayout(false);
+            this.textEditorTabControl.ResumeLayout(false);
             this.panel2.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
@@ -341,9 +324,8 @@ namespace Compliance.Editor
         private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem saveAsToolStripMenuItem;
         private TreeView treeViewItems;
-        private TabControl textBoxTabControl;
+        private TabControl textEditorTabControl;
         private TabPage tabPage3;
-        private RichTextBox codeTextBox;
     }
 }
 
