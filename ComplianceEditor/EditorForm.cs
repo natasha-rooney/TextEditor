@@ -15,7 +15,6 @@ namespace Compliance.Editor
         private int _closeRecDistanceFromLeft;
         private int _maxNumTabs = 10;
         private int _tabItemsDistanceFromTop;
-        //private string _openFilePath = string.Empty;
         private RichTextBox _tempTextBox;
         private TabPage _tempTabPage;
         private Simple_Tables _simpleTablesInstance = new Simple_Tables();
@@ -39,17 +38,17 @@ namespace Compliance.Editor
             _openTabFilePaths.Initialize();
 
             InitializeComponent();
-            InitializeTabs();
+            InitializeTabControls();
             InitializeListViews();
             EnableListDragDropEvents();
             //LoadAssembly();
         }
 
-        private void InitializeTabs()
+        private void InitializeTabControls()
         {
+            textEditorTabControl.Padding = new Point(5, 5);
             textEditorTabControl.TabPages[0].Text = "<New File>";
             textEditorTabControl.DrawItem += new DrawItemEventHandler(TextBoxTabControl_DrawItem);
-            textEditorTabControl.MouseDown += new MouseEventHandler(TextBoxTabControl_MouseDown);
             AddRichTextBox(textEditorTabControl, 0);
 
             toolsTabControl.TabPages[0].Text = "Tables";
@@ -62,22 +61,39 @@ namespace Compliance.Editor
             {
                 Name = "richTextBox" + pageIndex,
                 Location = new Point(5, 5),
-                Size = new Size(
-                ClientSize.Width - 40,
-                ClientSize.Height - 100),
+                WordWrap = false,
+                ScrollBars = RichTextBoxScrollBars.Both,
+                AcceptsTab = true,
 
                 Anchor =
                     AnchorStyles.Top
                     | AnchorStyles.Bottom
                     | AnchorStyles.Left
-                    | AnchorStyles.Right
+                    | AnchorStyles.Right,
+
+                Size = new Size(
+                    ClientSize.Width - 390,
+                    ClientSize.Height - 135)
             };
 
-            richTextBox = EnableTextBoxDragDropEvents(tabControl, richTextBox);
             tabControl.TabPages[pageIndex].Controls.Add(richTextBox);
+            _tempTabPage = tabControl.SelectedTab;
+            richTextBox.TextChanged += new EventHandler(TextBox_TextChanged);
+            richTextBox = EnableTextBoxDragDropEvents(tabControl, richTextBox);
 
             //richTextBox.KeyDown += new KeyEventHandler(RichTextBox_KeyDown);
             //richTextBox.MouseDown += new MouseEventHandler(RichTextBox_MouseDown);
+        }
+
+        private void TextBox_TextChanged(object sender, EventArgs e)
+        {
+            var pageIndex = textEditorTabControl.TabPages.IndexOf(_tempTabPage);
+
+            if (!_tabsChangedSinceSave[pageIndex])
+            {
+                textEditorTabControl.TabPages[pageIndex].Text += "*";
+                _tabsChangedSinceSave[pageIndex] = true;
+            }
         }
 
         private void TextBoxTabControl_DrawItem(object sender, DrawItemEventArgs e)
@@ -86,59 +102,43 @@ namespace Compliance.Editor
             _tabItemsDistanceFromTop = e.Bounds.Top + 4;
 
             e.Graphics.DrawString(
-                "x",
-                e.Font,
-                Brushes.Black,
-                _closeRecDistanceFromLeft,
-                _tabItemsDistanceFromTop);
-
-            e.Graphics.DrawString(
                 textEditorTabControl.TabPages[e.Index].Text,
                 e.Font,
                 Brushes.Black,
-                e.Bounds.Left + 4,
+                e.Bounds.Left + 5,
                 _tabItemsDistanceFromTop);
 
-            textEditorTabControl.Padding = new Point(15, 5);
-
             e.DrawFocusRectangle();
-        }
-
-        private void TextBoxTabControl_MouseDown(object sender, MouseEventArgs e)
-        {
-            for (int i = 0; i < textEditorTabControl.TabCount; i++)
-            {
-                var tabRecCloseButton = textEditorTabControl.GetTabRect(i);
-                tabRecCloseButton.Offset(_closeRecDistanceFromLeft, _tabItemsDistanceFromTop);
-                tabRecCloseButton.Width = 5;
-                tabRecCloseButton.Height = 10;
-
-                if (tabRecCloseButton.Contains(e.Location))
-                {
-                    // Problem - closing all tabs.
-                    _tempTabPage = textEditorTabControl.TabPages[i];
-                    CloseTab(textEditorTabControl, i);
-                }
-            }
         }
 
         private void InitializeListViews()
         {
             var tables = _simpleTablesInstance._tables;
-            tableListView.View = View.List;
-
-            foreach (var table in tables)
-            {
-                tableListView.Items.Add(table.Key.Capitalize(), table.Value);
-            }
+            SetUpList(tables, tableListView, "Tables");
 
             var nominals = _simpleTablesInstance._nominalTable;
-            nominalListView.View = View.List;
+            SetUpList(nominals, nominalListView, "Nominals");
+        }
 
-            foreach (var nominal in nominals)
+        private void SetUpList(Dictionary<string, string> dictionary, ListView listView, string headerName)
+        {
+            listView.View = View.Details;
+            listView.Scrollable = true;
+
+            var header = new ColumnHeader()
             {
-                nominalListView.Items.Add(nominal.Key.Capitalize(), nominal.Value);
+                Text = string.Empty,
+                Name = headerName
+            };
+
+            listView.Columns.Add(header);
+
+            foreach (var entry in dictionary)
+            {
+                listView.Items.Add(entry.Key.Capitalize(), entry.Value);
             }
+
+            listView.Columns[0].Width = -2;
         }
 
         private void EnableListDragDropEvents()
@@ -298,9 +298,10 @@ namespace Compliance.Editor
                 try
                 {
                     streamWriter.Write(GetTabTextBox(textEditorTabControl).Text);
-                    //_changedSinceLastSave = false;
-                    //_openFilePath = fileName;
-                    _openTabFilePaths[textEditorTabControl.SelectedIndex] = fileName;
+
+                    var pageIndex = textEditorTabControl.SelectedIndex;
+                    _tabsChangedSinceSave[pageIndex] = false;
+                    _openTabFilePaths[pageIndex] = fileName;
                     UpdateTextEditorTabText(fileName);
                     MessageBox.Show("Saved.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return true;
@@ -335,7 +336,6 @@ namespace Compliance.Editor
                 tabControl.TabPages.Add(tabPage);
                 tabControl.SelectedTab = tabPage;
                 tabControl.DrawItem += new DrawItemEventHandler(TextBoxTabControl_DrawItem);
-                tabControl.MouseDown += new MouseEventHandler(TextBoxTabControl_MouseDown);
                 AddRichTextBox(tabControl, tabControl.TabPages.Count - 1);
             }
             else
@@ -348,7 +348,7 @@ namespace Compliance.Editor
             }
         }
 
-        private void CloseTab(TabControl tabControl, int i)
+        private void CloseTab(TabControl tabControl)
         {
             var closingTabPageIndex = tabControl.TabPages.IndexOf(_tempTabPage);
 
@@ -370,7 +370,7 @@ namespace Compliance.Editor
                 }
             }
 
-            tabControl.TabPages.RemoveAt(i);
+            tabControl.TabPages.RemoveAt(closingTabPageIndex);
             _openTabFilePaths[closingTabPageIndex] = null;
             _tabsChangedSinceSave[closingTabPageIndex] = false;
         }
@@ -395,6 +395,18 @@ namespace Compliance.Editor
             var pageIndex = tabControl.SelectedIndex;
             return tabControl.SelectedTab.Controls.Find("richTextBox" + pageIndex, true)
                                                                              .First() as RichTextBox;
+        }
+
+        private void CloseTabToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var pageIndex = textEditorTabControl.SelectedIndex;
+            _tempTabPage = textEditorTabControl.SelectedTab;
+            CloseTab(textEditorTabControl);
+
+            if (textEditorTabControl.TabPages.Count > 0)
+            {
+                textEditorTabControl.SelectedTab = textEditorTabControl.TabPages[pageIndex - 1];
+            }
         }
 
         #region Intellisense
