@@ -12,27 +12,34 @@ namespace Compliance.Editor
 {
     public partial class EditorForm : Form
     {
-        private bool _changedSinceLastSave = false;
-        private bool _foundNode = false;
-        //private bool _wordMatched = false;
         private int _closeRecDistanceFromLeft;
+        private int _maxNumTabs = 10;
         private int _tabItemsDistanceFromTop;
-        private string _currentPath;
-        private string _openFilePath = string.Empty;
-        private string _typed = string.Empty;
+        //private string _openFilePath = string.Empty;
         private RichTextBox _tempTextBox;
+        private TabPage _tempTabPage;
+        private Simple_Tables _simpleTablesInstance = new Simple_Tables();
 
+        private bool[] _tabsChangedSinceSave;
+        private string[] _openTabFilePaths;
+
+        //private bool _foundNode = false;
+        //private bool _wordMatched = false;
+        //private string _currentPath;
         //private Assembly _assembly;
         //private Hashtable _dictionaries;
-        private Simple_Tables _simpleTablesInstance = new Simple_Tables();
         //private TreeNode _findNodeResult = null;
-        private TreeNode _nameSpaceNode;
+        //private TreeNode _nameSpaceNode;
 
         public EditorForm()
         {
+            _tabsChangedSinceSave = new bool[_maxNumTabs];
+            _openTabFilePaths = new string[_maxNumTabs];
+            _tabsChangedSinceSave.Initialize();
+            _openTabFilePaths.Initialize();
+
             InitializeComponent();
             InitializeTabs();
-            //SetUpTab(textBoxTabControl, textBoxTabControl.TabPages.Count - 1);
             InitializeListViews();
             EnableListDragDropEvents();
             //LoadAssembly();
@@ -41,9 +48,10 @@ namespace Compliance.Editor
         private void InitializeTabs()
         {
             textEditorTabControl.TabPages[0].Text = "<New File>";
-            AddRichTextBox(textEditorTabControl, 0);
             textEditorTabControl.DrawItem += new DrawItemEventHandler(TextBoxTabControl_DrawItem);
             textEditorTabControl.MouseDown += new MouseEventHandler(TextBoxTabControl_MouseDown);
+            AddRichTextBox(textEditorTabControl, 0);
+
             toolsTabControl.TabPages[0].Text = "Tables";
             toolsTabControl.TabPages[1].Text = "Nominal";
         }
@@ -74,7 +82,7 @@ namespace Compliance.Editor
 
         private void TextBoxTabControl_DrawItem(object sender, DrawItemEventArgs e)
         {
-            _closeRecDistanceFromLeft = e.Bounds.Left + 2;
+            _closeRecDistanceFromLeft = e.Bounds.Right - 18;
             _tabItemsDistanceFromTop = e.Bounds.Top + 4;
 
             e.Graphics.DrawString(
@@ -88,8 +96,10 @@ namespace Compliance.Editor
                 textEditorTabControl.TabPages[e.Index].Text,
                 e.Font,
                 Brushes.Black,
-                e.Bounds.Left + 12,
+                e.Bounds.Left + 4,
                 _tabItemsDistanceFromTop);
+
+            textEditorTabControl.Padding = new Point(15, 5);
 
             e.DrawFocusRectangle();
         }
@@ -105,6 +115,8 @@ namespace Compliance.Editor
 
                 if (tabRecCloseButton.Contains(e.Location))
                 {
+                    // Problem - closing all tabs.
+                    _tempTabPage = textEditorTabControl.TabPages[i];
                     CloseTab(textEditorTabControl, i);
                 }
             }
@@ -226,8 +238,9 @@ namespace Compliance.Editor
                         richTextBox.AppendText(line + "\n");
                     }
 
-                    _openFilePath = openFileDialog.FileName;
-                    _changedSinceLastSave = false;
+                    var pageIndex = textEditorTabControl.SelectedIndex;
+                    _openTabFilePaths[pageIndex] = openFileDialog.FileName;
+                    _tabsChangedSinceSave[pageIndex] = false;
                     UpdateTextEditorTabText(openFileDialog.FileName);
                 }
                 catch (Exception ex)
@@ -270,7 +283,7 @@ namespace Compliance.Editor
 
         private void SaveButton_Click(object sender, EventArgs e)
         {
-            SaveFile(_openFilePath);
+            SaveFile(_openTabFilePaths[textEditorTabControl.SelectedIndex]);
         }
 
         private bool SaveFile(string fileName)
@@ -285,8 +298,9 @@ namespace Compliance.Editor
                 try
                 {
                     streamWriter.Write(GetTabTextBox(textEditorTabControl).Text);
-                    _changedSinceLastSave = false;
-                    _openFilePath = fileName;
+                    //_changedSinceLastSave = false;
+                    //_openFilePath = fileName;
+                    _openTabFilePaths[textEditorTabControl.SelectedIndex] = fileName;
                     UpdateTextEditorTabText(fileName);
                     MessageBox.Show("Saved.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return true;
@@ -311,21 +325,34 @@ namespace Compliance.Editor
 
         private void OpenTab(TabControl tabControl, string fileName)
         {
-            var tabPage = new TabPage(fileName)
+            if (tabControl.TabPages.Count < _maxNumTabs)
             {
-                BackColor = Color.White
-            };
+                var tabPage = new TabPage(fileName)
+                {
+                    BackColor = Color.White
+                };
 
-            tabControl.TabPages.Add(tabPage);
-            tabControl.SelectedTab = tabPage;
-            tabControl.DrawItem += new DrawItemEventHandler(TextBoxTabControl_DrawItem);
-            tabControl.MouseDown += new MouseEventHandler(TextBoxTabControl_MouseDown);
-            AddRichTextBox(tabControl, tabControl.TabPages.Count - 1);
+                tabControl.TabPages.Add(tabPage);
+                tabControl.SelectedTab = tabPage;
+                tabControl.DrawItem += new DrawItemEventHandler(TextBoxTabControl_DrawItem);
+                tabControl.MouseDown += new MouseEventHandler(TextBoxTabControl_MouseDown);
+                AddRichTextBox(tabControl, tabControl.TabPages.Count - 1);
+            }
+            else
+            {
+                MessageBox.Show(
+                    "You already have the maximum number of tabs open.",
+                    "Information",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
         }
 
         private void CloseTab(TabControl tabControl, int i)
         {
-            if (_changedSinceLastSave)
+            var closingTabPageIndex = tabControl.TabPages.IndexOf(_tempTabPage);
+
+            if (_tabsChangedSinceSave[closingTabPageIndex])
             {
                 var saveChanges = MessageBox.Show(
                             "You have unsaved changes. Do you want to save them first?",
@@ -333,20 +360,19 @@ namespace Compliance.Editor
                             MessageBoxButtons.YesNoCancel,
                             MessageBoxIcon.Question);
 
-                //if ((saveChanges == DialogResult.No)
-                //            || ((saveChanges == DialogResult.Yes) && SaveFile(_openFilePath)))
-                //{
-
-                //}
-
-                if (saveChanges == DialogResult.Cancel)
+                if (saveChanges == DialogResult.Yes)
+                {
+                    SaveFile(_openTabFilePaths[closingTabPageIndex]);
+                }
+                else if (saveChanges == DialogResult.Cancel)
                 {
                     return;
                 }
             }
 
             tabControl.TabPages.RemoveAt(i);
-            _openFilePath = string.Empty;
+            _openTabFilePaths[closingTabPageIndex] = null;
+            _tabsChangedSinceSave[closingTabPageIndex] = false;
         }
 
         private void OpenToolStripMenuItem_Click(object sender, EventArgs e)
@@ -356,7 +382,7 @@ namespace Compliance.Editor
 
         private void SaveToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            SaveFile(_openFilePath);
+            SaveFile(_openTabFilePaths[textEditorTabControl.SelectedIndex]);
         }
 
         private void SaveAsToolStripMenuItem_Click(object sender, EventArgs e)

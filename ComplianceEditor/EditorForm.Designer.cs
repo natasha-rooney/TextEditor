@@ -129,13 +129,16 @@ namespace Compliance.Editor
             this.panel1.Size = new System.Drawing.Size(822, 563);
             this.panel1.TabIndex = 3;
             // 
-            // textBoxTabControl
+            // textEditorTabControl
             // 
+            this.textEditorTabControl.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.textEditorTabControl.Controls.Add(this.tabPage3);
             this.textEditorTabControl.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
             this.textEditorTabControl.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textEditorTabControl.Location = new System.Drawing.Point(3, 3);
-            this.textEditorTabControl.Name = "textBoxTabControl";
+            this.textEditorTabControl.Name = "textEditorTabControl";
             this.textEditorTabControl.SelectedIndex = 0;
             this.textEditorTabControl.Size = new System.Drawing.Size(473, 553);
             this.textEditorTabControl.TabIndex = 3;
