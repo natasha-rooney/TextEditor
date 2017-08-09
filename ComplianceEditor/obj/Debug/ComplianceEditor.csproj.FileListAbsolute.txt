@@ -1,0 +1,11 @@
+C:\Development\ComplianceEditor\ComplianceEditor\bin\Debug\ComplianceEditor.exe.config
+C:\Development\ComplianceEditor\ComplianceEditor\bin\Debug\ComplianceEditor.exe
+C:\Development\ComplianceEditor\ComplianceEditor\bin\Debug\ComplianceEditor.pdb
+C:\Development\ComplianceEditor\ComplianceEditor\obj\Debug\ComplianceEditor.csprojResolveAssemblyReference.cache
+C:\Development\ComplianceEditor\ComplianceEditor\obj\Debug\ComplianceEditor.Properties.Resources.resources
+C:\Development\ComplianceEditor\ComplianceEditor\obj\Debug\ComplianceEditor.csproj.GenerateResource.Cache
+C:\Development\ComplianceEditor\ComplianceEditor\obj\Debug\ComplianceEditor.exe
+C:\Development\ComplianceEditor\ComplianceEditor\obj\Debug\ComplianceEditor.pdb
+C:\Development\ComplianceEditor\ComplianceEditor\obj\Debug\ComplianceEditor.EditorForm.resources
+C:\Development\ComplianceEditor\ComplianceEditor\bin\Debug\StyleCop.dll
+C:\Development\ComplianceEditor\ComplianceEditor\bin\Debug\StyleCop.xml

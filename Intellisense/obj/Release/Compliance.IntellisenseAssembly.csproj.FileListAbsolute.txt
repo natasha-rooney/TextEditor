@@ -1,0 +1,4 @@
+C:\Development\ComplianceEditor\Intellisense\bin\Release\Intellisense.dll
+C:\Development\ComplianceEditor\Intellisense\bin\Release\Intellisense.pdb
+C:\Development\ComplianceEditor\Intellisense\obj\Release\Intellisense.dll
+C:\Development\ComplianceEditor\Intellisense\obj\Release\Intellisense.pdb

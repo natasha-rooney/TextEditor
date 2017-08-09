@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.16
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compliance.Editor", "ComplianceEditor\Compliance.Editor.csproj", "{A6979D3B-7938-4FF0-AEE5-5A60D09BC319}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compliance.Intellisense", "Intellisense\Compliance.Intellisense.csproj", "{4C269198-2564-43AC-B7FC-7D379F92F851}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A6979D3B-7938-4FF0-AEE5-5A60D09BC319}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6979D3B-7938-4FF0-AEE5-5A60D09BC319}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6979D3B-7938-4FF0-AEE5-5A60D09BC319}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6979D3B-7938-4FF0-AEE5-5A60D09BC319}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C269198-2564-43AC-B7FC-7D379F92F851}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{4C269198-2564-43AC-B7FC-7D379F92F851}.Debug|Any CPU.Build.0 = Release|Any CPU
+		{4C269198-2564-43AC-B7FC-7D379F92F851}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C269198-2564-43AC-B7FC-7D379F92F851}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

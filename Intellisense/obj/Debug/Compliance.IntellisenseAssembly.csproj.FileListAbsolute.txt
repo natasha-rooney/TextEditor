@@ -1,0 +1,5 @@
+C:\Development\ComplianceEditor\Intellisense\bin\Debug\Intellisense.dll
+C:\Development\ComplianceEditor\Intellisense\bin\Debug\Intellisense.pdb
+C:\Development\ComplianceEditor\Intellisense\obj\Debug\Compliance.IntellisenseAssembly.csprojResolveAssemblyReference.cache
+C:\Development\ComplianceEditor\Intellisense\obj\Debug\Intellisense.dll
+C:\Development\ComplianceEditor\Intellisense\obj\Debug\Intellisense.pdb
