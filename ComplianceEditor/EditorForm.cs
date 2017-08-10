@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Reflection;
+using System.Linq;
 using System.Windows.Forms;
 using Compliance.Intellisense;
-using System.Linq;
-using System.Collections.Generic;
+using ComplianceEditor;
 
 namespace Compliance.Editor
 {
@@ -15,20 +14,10 @@ namespace Compliance.Editor
         private int _closeRecDistanceFromLeft;
         private int _maxNumTabs = 10;
         private int _tabItemsDistanceFromTop;
-        private RichTextBox _tempTextBox;
-        private TabPage _tempTabPage;
         private Simple_Tables _simpleTablesInstance = new Simple_Tables();
 
         private bool[] _tabsChangedSinceSave;
         private string[] _openTabFilePaths;
-
-        //private bool _foundNode = false;
-        //private bool _wordMatched = false;
-        //private string _currentPath;
-        //private Assembly _assembly;
-        //private Hashtable _dictionaries;
-        //private TreeNode _findNodeResult = null;
-        //private TreeNode _nameSpaceNode;
 
         public EditorForm()
         {
@@ -41,14 +30,12 @@ namespace Compliance.Editor
             InitializeTabControls();
             InitializeListViews();
             EnableListDragDropEvents();
-            //LoadAssembly();
         }
 
         private void InitializeTabControls()
         {
-            textEditorTabControl.Padding = new Point(5, 5);
             textEditorTabControl.TabPages[0].Text = "<New File>";
-            textEditorTabControl.DrawItem += new DrawItemEventHandler(TextBoxTabControl_DrawItem);
+            textEditorTabControl.Padding = new Point(7, 5);
             AddRichTextBox(textEditorTabControl, 0);
 
             toolsTabControl.TabPages[0].Text = "Tables";
@@ -59,11 +46,11 @@ namespace Compliance.Editor
         {
             var richTextBox = new RichTextBox()
             {
-                Name = "richTextBox" + pageIndex,
                 Location = new Point(5, 5),
                 WordWrap = false,
                 ScrollBars = RichTextBoxScrollBars.Both,
                 AcceptsTab = true,
+                Parent = tabControl.SelectedTab,
 
                 Anchor =
                     AnchorStyles.Top
@@ -73,21 +60,17 @@ namespace Compliance.Editor
 
                 Size = new Size(
                     ClientSize.Width - 390,
-                    ClientSize.Height - 135)
+                    ClientSize.Height - 137)
             };
 
             tabControl.TabPages[pageIndex].Controls.Add(richTextBox);
-            _tempTabPage = tabControl.SelectedTab;
-            richTextBox.TextChanged += new EventHandler(TextBox_TextChanged);
             richTextBox = EnableTextBoxDragDropEvents(tabControl, richTextBox);
-
-            //richTextBox.KeyDown += new KeyEventHandler(RichTextBox_KeyDown);
-            //richTextBox.MouseDown += new MouseEventHandler(RichTextBox_MouseDown);
+            richTextBox.TextChanged += new EventHandler(TextBox_TextChanged);
         }
 
         private void TextBox_TextChanged(object sender, EventArgs e)
         {
-            var pageIndex = textEditorTabControl.TabPages.IndexOf(_tempTabPage);
+            var pageIndex = textEditorTabControl.SelectedIndex;
 
             if (!_tabsChangedSinceSave[pageIndex])
             {
@@ -149,7 +132,6 @@ namespace Compliance.Editor
 
         private RichTextBox EnableTextBoxDragDropEvents(TabControl tabControl, RichTextBox richTextBox)
         {
-            _tempTextBox = richTextBox;
             richTextBox.DragEnter += new DragEventHandler(TextBox_DragEnter);
             richTextBox.DragDrop += new DragEventHandler(TextBox_DragDrop);
             richTextBox.AllowDrop = true;
@@ -176,9 +158,11 @@ namespace Compliance.Editor
 
         private void TextBox_DragDrop(object sender, DragEventArgs e)
         {
-            if (_tempTextBox == null)
+            var richTextBox = GetTabTextBox(textEditorTabControl);
+
+            if (richTextBox == null)
             {
-                MessageBox.Show("Could not enable drag and drop for a textbox. Error: No text box has been provided.");
+                MessageBox.Show("Could not drag and drop into textbox. Error: No text box has been provided.");
                 return;
             }
 
@@ -189,10 +173,10 @@ namespace Compliance.Editor
 
                 foreach (ListViewItem listItem in selectedListViewItems)
                 {
-                    var index = _tempTextBox.GetCharIndexFromPosition(_tempTextBox.PointToClient(Cursor.Position));
-                    _tempTextBox.SelectionStart = index;
-                    _tempTextBox.SelectionLength = 0;
-                    _tempTextBox.SelectedText = listItem.ImageKey;
+                    var index = richTextBox.GetCharIndexFromPosition(richTextBox.PointToClient(Cursor.Position));
+                    richTextBox.SelectionStart = index;
+                    richTextBox.SelectionLength = 0;
+                    richTextBox.SelectedText = listItem.ImageKey;
                 }
             }
         }
@@ -205,10 +189,10 @@ namespace Compliance.Editor
 
         private void OpenButton_Click(object sender, EventArgs e)
         {
-            LoadFile();
+            OpenFile();
         }
 
-        private void LoadFile()
+        private void OpenFile()
         {
             var openFileDialog = new OpenFileDialog()
             {
@@ -217,9 +201,18 @@ namespace Compliance.Editor
 
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                OpenTab(textEditorTabControl, openFileDialog.FileName);
-                ClearCodeTextBox();
-                ReadFile(openFileDialog);
+                var fileName = openFileDialog.FileName;
+
+                if (_openTabFilePaths.Contains(fileName))
+                {
+                    var pageIndex = Array.IndexOf(_openTabFilePaths, fileName);
+                    textEditorTabControl.SelectedIndex = pageIndex;
+                }
+                else
+                {
+                    OpenTab(textEditorTabControl, fileName);
+                    ReadFile(openFileDialog);
+                }
             }
         }
 
@@ -238,9 +231,8 @@ namespace Compliance.Editor
                         richTextBox.AppendText(line + "\n");
                     }
 
-                    var pageIndex = textEditorTabControl.SelectedIndex;
-                    _openTabFilePaths[pageIndex] = openFileDialog.FileName;
-                    _tabsChangedSinceSave[pageIndex] = false;
+                    _tabsChangedSinceSave[textEditorTabControl.SelectedIndex] = false; // Updating bc changing text triggers text changed event
+
                     UpdateTextEditorTabText(openFileDialog.FileName);
                 }
                 catch (Exception ex)
@@ -252,11 +244,6 @@ namespace Compliance.Editor
                         MessageBoxIcon.Error);
                 }
             }
-        }
-
-        private void ClearCodeTextBox()
-        {
-            GetTabTextBox(textEditorTabControl).Text = string.Empty;
         }
 
         private void SaveAsButton_Click(object sender, EventArgs e)
@@ -292,29 +279,39 @@ namespace Compliance.Editor
             {
                 return SaveFileAs();
             }
-
-            using (var streamWriter = new StreamWriter(fileName))
+            else
             {
-                try
+                var selectedIndex = textEditorTabControl.SelectedIndex;
+                if (!_tabsChangedSinceSave[selectedIndex])
                 {
-                    streamWriter.Write(GetTabTextBox(textEditorTabControl).Text);
-
-                    var pageIndex = textEditorTabControl.SelectedIndex;
-                    _tabsChangedSinceSave[pageIndex] = false;
-                    _openTabFilePaths[pageIndex] = fileName;
-                    UpdateTextEditorTabText(fileName);
-                    MessageBox.Show("Saved.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(
-                        "Unable to save file. \nException: " + ex.Message,
-                        "Error",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Error);
-
                     return false;
+                }
+                else
+                {
+                    using (var streamWriter = new StreamWriter(fileName))
+                    {
+                        try
+                        {
+                            streamWriter.Write(GetTabTextBox(textEditorTabControl).Text);
+
+                            var pageIndex = textEditorTabControl.SelectedIndex;
+                            _tabsChangedSinceSave[pageIndex] = false;
+                            _openTabFilePaths[pageIndex] = fileName;
+                            UpdateTextEditorTabText(fileName);
+                            MessageBox.Show("Saved.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            return true;
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(
+                                "Unable to save file. \nException: " + ex.Message,
+                                "Error",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+
+                            return false;
+                        }
+                    }
                 }
             }
         }
@@ -336,6 +333,8 @@ namespace Compliance.Editor
                 tabControl.TabPages.Add(tabPage);
                 tabControl.SelectedTab = tabPage;
                 tabControl.DrawItem += new DrawItemEventHandler(TextBoxTabControl_DrawItem);
+                _openTabFilePaths[tabControl.SelectedIndex] = fileName;
+                _tabsChangedSinceSave[tabControl.SelectedIndex] = false;
                 AddRichTextBox(tabControl, tabControl.TabPages.Count - 1);
             }
             else
@@ -350,7 +349,7 @@ namespace Compliance.Editor
 
         private void CloseTab(TabControl tabControl)
         {
-            var closingTabPageIndex = tabControl.TabPages.IndexOf(_tempTabPage);
+            var closingTabPageIndex = tabControl.SelectedIndex;
 
             if (_tabsChangedSinceSave[closingTabPageIndex])
             {
@@ -373,11 +372,17 @@ namespace Compliance.Editor
             tabControl.TabPages.RemoveAt(closingTabPageIndex);
             _openTabFilePaths[closingTabPageIndex] = null;
             _tabsChangedSinceSave[closingTabPageIndex] = false;
+
+            for (int i = closingTabPageIndex; i < tabControl.TabPages.Count; i++)
+            {
+                _openTabFilePaths[i] = _openTabFilePaths[i + 1];
+                _tabsChangedSinceSave[i] = _tabsChangedSinceSave[i + 1];
+            }
         }
 
         private void OpenToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            LoadFile();
+            OpenFile();
         }
 
         private void SaveToolStripMenuItem_Click(object sender, EventArgs e)
@@ -392,234 +397,26 @@ namespace Compliance.Editor
 
         private RichTextBox GetTabTextBox(TabControl tabControl)
         {
-            var pageIndex = tabControl.SelectedIndex;
-            return tabControl.SelectedTab.Controls.Find("richTextBox" + pageIndex, true)
-                                                                             .First() as RichTextBox;
+            return tabControl.SelectedTab.Controls.OfType<RichTextBox>().First();
         }
 
         private void CloseTabToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var pageIndex = textEditorTabControl.SelectedIndex;
-            _tempTabPage = textEditorTabControl.SelectedTab;
+            var closingTabPageIndex = textEditorTabControl.SelectedIndex;
+            var tabPages = textEditorTabControl.TabPages;
             CloseTab(textEditorTabControl);
 
             if (textEditorTabControl.TabPages.Count > 0)
             {
-                textEditorTabControl.SelectedTab = textEditorTabControl.TabPages[pageIndex - 1];
+                if (closingTabPageIndex != 0)
+                {
+                    textEditorTabControl.SelectedTab = tabPages[closingTabPageIndex - 1];
+                }
+                else
+                {
+                    textEditorTabControl.SelectedTab = tabPages[0];
+                }
             }
         }
-
-        #region Intellisense
-        //private void SearchTree(TreeNodeCollection treeNodes, string path, bool continueUntilFind)
-        //{
-        //    if (_foundNode)
-        //    {
-        //        return;
-        //    }
-
-        //    var p = string.Empty;
-        //    var n = 0;
-        //    n = path.IndexOf(".");
-
-        //    if (n != -1)
-        //    {
-        //        p = path.Substring(0, n);
-
-        //        if (_currentPath != string.Empty)
-        //        {
-        //            _currentPath += "." + p;
-        //        }
-        //        else
-        //        {
-        //            _currentPath = p;
-        //        }
-
-        //        // Knock off the first part
-        //        path = path.Remove(0, n + 1);
-        //    }
-        //    else
-        //    {
-        //        _currentPath += "." + path;
-        //    }
-
-        //    for (int i = 0; i < treeNodes.Count; i++)
-        //    {
-        //        if (treeNodes[i].FullPath == _currentPath)
-        //        {
-        //            if (continueUntilFind)
-        //            {
-        //                _nameSpaceNode = treeNodes[i];
-        //            }
-
-        //            _nameSpaceNode = treeNodes[i];
-
-        //            // got a dot, continue, or return
-        //            SearchTree(treeNodes[i].Nodes, path, continueUntilFind);
-
-        //        }
-        //        else if (!continueUntilFind)
-        //        {
-        //            _foundNode = true;
-        //            return;
-        //        }
-        //    }
-        //}
-        //private GListBox GetGListBox(TabControl tabControl)
-        //{
-        //    var pageIndex = tabControl.SelectedIndex;
-        //    return tabControl.SelectedTab.Controls.Find("GListBox" + pageIndex, true)
-        //                                                                     .First() as GListBox;
-        //}
-
-        //private void LoadAssembly() // Rename? Just loads dictionary into tree view hierarchy
-        //{
-        //    _dictionaries = new Hashtable(); // Rename namespaces?
-        //    treeViewItems.Nodes.Clear();
-
-        //    try
-        //    {
-        //        _assembly = Assembly.Load("Intellisense");
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        MessageBox.Show("Could not load the assembly file.\nException message: " + e.Message);
-        //        return;
-        //    }
-
-        //    var assemblyTypes = _assembly.GetTypes();
-        //    _dictionaries = new Hashtable();
-        //    //namespaces = new Hashtable();
-
-        //    foreach (var type in assemblyTypes)
-        //    {
-        //        if (type.IsClass)
-        //        {
-        //            AddClassDictionariesToTree(type);
-        //        }
-
-        //        //AddNamespacesToTree(type);
-        //    }
-
-        //    DebugCallRecursive();
-        //}
-
-        //private void AddClassDictionariesToTree(Type type)
-        //{
-        //    var instance = Activator.CreateInstance(type);
-
-        //    var instanceVariables = instance.GetType()
-        //                                                         .GetFields()
-        //                                                         .Select(field => field.GetValue(instance))
-        //                                                         .ToList();
-
-        //    foreach (var variable in instanceVariables)
-        //    {
-        //        var variableType = variable.GetType();
-        //        var isDictionary =
-        //            variableType.IsGenericType && variableType.GetGenericTypeDefinition() == typeof(Dictionary<,>);
-
-        //        if (isDictionary)
-        //        {
-        //            var dictionary = (Dictionary<string, string>)null;
-
-        //            try
-        //            {
-        //                dictionary = (Dictionary<string, string>)variable;
-        //            }
-        //            catch (Exception e)
-        //            {
-        //                MessageBox.Show("Could not build the hashtable required.\nException message: " + e.Message);
-        //                return;
-        //            }
-
-        //            ProcessDictionaryItems(dictionary, type);
-        //        }
-        //    }
-        //}
-
-        //private int index = 0;
-
-        //private string[] DebugPrintTreeView(TreeNode treeNode, string[] treeArray, int index)
-        //{
-        //    treeArray[index] = treeNode.Text;
-        //    index++;
-
-        //    foreach (var tn in treeNode.Nodes)
-        //    {
-        //        treeArray = DebugPrintTreeView((TreeNode)tn, treeArray, index);
-        //    }
-
-        //    return treeArray;
-        //}
-
-        //private void DebugCallRecursive()
-        //{
-        //    var treeArray = new string[20];
-        //    var nodes = treeViewItems.Nodes;
-
-        //    foreach (var n in nodes)
-        //    {
-        //        treeArray = DebugPrintTreeView((TreeNode)n, treeArray, index);
-        //    }
-
-        //    var printString = string.Empty;
-        //    foreach (var item in treeArray)
-        //    {
-        //        printString += "\n" + item;
-        //    }
-
-        //    MessageBox.Show(printString);
-        //}
-
-        //private void AddMembers(TreeNode treeNode, Type type)
-        //{
-        //    // Get all members except methods
-        //    var memberInfo = type.GetMembers();
-
-        //    for (int j = 0; j < memberInfo.Length; j++)
-        //    {
-        //        if (memberInfo[j].ReflectedType.IsPublic 
-        //            && memberInfo[j].MemberType != MemberTypes.Method)
-        //        {
-        //            var node = treeNode.Nodes.Add(memberInfo[j].Name);
-        //            node.Tag = memberInfo[j].MemberType;
-        //        }
-        //    }
-
-        //    // Get all methods
-        //    var methodInfo = type.GetMethods();
-
-        //    for (int j = 0; j < methodInfo.Length; j++)
-        //    {
-        //        var node = treeNode.Nodes.Add(methodInfo[j].Name);
-        //        string parms = string.Empty;
-
-        //        var parameterInfo = methodInfo[j].GetParameters();
-
-        //        for (int f = 0; f < parameterInfo.Length; f++)
-        //        {
-        //            parms += parameterInfo[f].ParameterType.ToString() + " " + parameterInfo[f].Name + ", ";
-        //        }
-
-        //        // Knock off remaining ", "
-        //        if (parms.Length > 2)
-        //        {
-        //            parms = parms.Substring(0, parms.Length - 2);
-        //        }
-
-        //        node.Tag = parms;
-        //    }
-        //}
-        #endregion
-
-        // Feature for later
-        //private void CodeTextBox_TextChanged(object sender, EventArgs e)
-        //{
-        //    if (!_changedSinceLastSave)
-        //    {
-        //        textEditorTabControl.TabPages[0].Text += "*";
-        //        _changedSinceLastSave = true;
-        //    }
-        //}
     }
 }

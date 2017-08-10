@@ -9,16 +9,13 @@ namespace Compliance.Editor
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
             {
                 components.Dispose();
             }
+
             base.Dispose(disposing);
         }
 
@@ -136,7 +133,6 @@ namespace Compliance.Editor
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textEditorTabControl.Controls.Add(this.tabPage3);
-            this.textEditorTabControl.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
             this.textEditorTabControl.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textEditorTabControl.Location = new System.Drawing.Point(3, 3);
             this.textEditorTabControl.Name = "textEditorTabControl";

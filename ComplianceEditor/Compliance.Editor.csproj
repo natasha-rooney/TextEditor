@@ -60,6 +60,9 @@
     <Compile Include="GListBoxItem.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TabPageExtension.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="_stylecop\GlobalSuppressions.cs" />
     <EmbeddedResource Include="EditorForm.resx">
       <DependentUpon>EditorForm.cs</DependentUpon>
