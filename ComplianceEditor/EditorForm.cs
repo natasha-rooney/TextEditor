@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 using Compliance.Intellisense;
-using System.Linq;
-using System.Collections.Generic;
 using TextEditor;
-using System.Diagnostics;
 
 namespace Compliance.Editor
 {
+
     public partial class EditorForm : Form
     {
         private bool _changedSinceLastSave = false;
@@ -50,74 +51,121 @@ namespace Compliance.Editor
             toolsTabControl.TabPages[1].Text = "Nominal";
         }
 
-        private void SetUpTab(TabControl tabControl, int pageIndex)
+        private void InitializeListViews()
         {
-            codeTextBox.KeyDown += new KeyEventHandler(RichTextBox_KeyDown);
-            codeTextBox.MouseDown += new MouseEventHandler(RichTextBox_MouseDown);
-            //AddRichTextBox(tabControl, pageIndex);
-            AddGListBox(tabControl, pageIndex);
-        }
+            var tables = _simpleTablesInstance._tables;
+            tableListView.View = View.List;
 
-        private void TextEditorTabControl_DrawItem(object sender, DrawItemEventArgs e)
-        {
-            _closeRecDistanceFromLeft = e.Bounds.Left + 2;
-            _tabItemsDistanceFromTop = e.Bounds.Top + 4;
-
-            e.Graphics.DrawString(
-                "x",
-                e.Font,
-                Brushes.Black,
-                _closeRecDistanceFromLeft,
-                _tabItemsDistanceFromTop);
-
-            e.Graphics.DrawString(
-                textEditorTabControl.TabPages[e.Index].Text,
-                e.Font,
-                Brushes.Black,
-                e.Bounds.Left + 12,
-                _tabItemsDistanceFromTop);
-
-            e.DrawFocusRectangle();
-        }
-
-        private void TextEditorTabControl_MouseDown(object sender, MouseEventArgs e)
-        {
-            for (int i = 0; i < textEditorTabControl.TabCount; i++)
+            foreach (var table in tables)
             {
-                var tabRecCloseButton = textEditorTabControl.GetTabRect(i);
-                tabRecCloseButton.Offset(_closeRecDistanceFromLeft, _tabItemsDistanceFromTop);
-                tabRecCloseButton.Width = 5;
-                tabRecCloseButton.Height = 10;
+                tableListView.Items.Add(table.Key.Capitalize(), table.Value);
+            }
 
-                if (tabRecCloseButton.Contains(e.Location))
-                {
-                    if (!_changedSinceLastSave)
-                    {
-                        CloseTab(textEditorTabControl, i);
-                    }
-                    else
-                    {
-                        var saveChanges = MessageBox.Show(
-                            "You have unsaved changes. Do you want to save before closing this tab?",
-                            "Confirm",
-                            MessageBoxButtons.YesNoCancel,
-                            MessageBoxIcon.Question);
+            var nominals = _simpleTablesInstance._nominalTable;
+            nominalListView.View = View.List;
 
-                        if ((saveChanges == DialogResult.No) ||
-                            ((saveChanges == DialogResult.Yes) && SaveFile(_openFilePath)))
-                        {
-                            CloseTab(textEditorTabControl, i);
-                        }
-                        else if (saveChanges == DialogResult.Cancel)
-                        {
-                            break;
-                        }
-                    }
-                }
+            foreach (var nominal in nominals)
+            {
+                nominalListView.Items.Add(nominal.Key.Capitalize(), nominal.Value);
             }
         }
 
-        #region RichTextBox
+        private void TextBoxTooltip_Enter(object sender, EventArgs e)
+        {
+            codeTextBox.Focus();
+        }
+
+        #region Drag Drop Operations
+        private void EnableDragDropEvents()
+        {
+            tableListView.ItemDrag += new ItemDragEventHandler(TableListView_ItemDrag);
+            nominalListView.ItemDrag += new ItemDragEventHandler(NominalListView_ItemDrag);
+            codeTextBox.DragEnter += new DragEventHandler(CodeTextBox_DragEnter);
+            codeTextBox.DragDrop += new DragEventHandler(CodeTextBox_DragDrop);
+            codeTextBox.AllowDrop = true;
+        }
+
+        private void TableListView_ItemDrag(object sender, ItemDragEventArgs e)
+        {
+            tableListView.DoDragDrop(tableListView.SelectedItems, DragDropEffects.Move);
+        }
+
+        private void NominalListView_ItemDrag(object sender, ItemDragEventArgs e)
+        {
+            nominalListView.DoDragDrop(nominalListView.SelectedItems, DragDropEffects.Move);
+        }
+
+        private void CodeTextBox_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(typeof(ListView.SelectedListViewItemCollection)))
+            {
+                e.Effect = DragDropEffects.Move;
+            }
+        }
+
+        private void CodeTextBox_DragDrop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(typeof(ListView.SelectedListViewItemCollection).ToString(), false))
+            {
+                var selectedListViewItems
+                    = (ListView.SelectedListViewItemCollection)e.Data.GetData(typeof(ListView.SelectedListViewItemCollection));
+
+                foreach (ListViewItem listItem in selectedListViewItems)
+                {
+                    var index = codeTextBox.GetCharIndexFromPosition(codeTextBox.PointToClient(Cursor.Position));
+                    codeTextBox.SelectionStart = index;
+                    codeTextBox.SelectionLength = 0;
+                    codeTextBox.SelectedText = listItem.ImageKey;
+                }
+            }
+        }
+        #endregion
+
+        #region Buttons
+        private void OpenButton_Click(object sender, EventArgs e)
+        {
+            LoadFile();
+        }
+
+        private void SaveAsButton_Click(object sender, EventArgs e)
+        {
+            SaveFileAs();
+        }
+
+        private void SaveButton_Click(object sender, EventArgs e)
+        {
+            SaveFile(_openFilePath);
+        }
+        #endregion
+
+        #region Tool Strip Menu Items
+        private void NewTabToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenTab(textEditorTabControl, "<New tab>");
+        }
+
+        private void OpenToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            LoadFile();
+        }
+
+        private void SaveToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveFile(_openFilePath);
+        }
+
+        private void SaveAsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveFileAs();
+        }
+        #endregion
+
+        #region TextBoxOperations
+        private void ClearCodeTextBox()
+        {
+            codeTextBox.Text = string.Empty;
+        }
+
         private void AddRichTextBox(TabControl tabControl, int pageIndex)
         {
             var richTextBox = new RichTextBox();
@@ -138,13 +186,6 @@ namespace Compliance.Editor
             richTextBox.MouseDown += new MouseEventHandler(RichTextBox_MouseDown);
         }
 
-        private void RichTextBox_MouseDown(object sender, MouseEventArgs e)
-        {
-            // Hide the listview and the tooltip
-            textBoxTooltip.Hide();
-            GetGListBox().Hide();
-        }
-
         private void RichTextBox_KeyDown(object sender, KeyEventArgs e)
         {
             var i = codeTextBox.SelectionStart;
@@ -159,9 +200,11 @@ namespace Compliance.Editor
             _keyLastPressed = e.KeyData;
         }
 
-        private void TextBoxTooltip_Enter(object sender, EventArgs e)
+        private void RichTextBox_MouseDown(object sender, MouseEventArgs e)
         {
-            codeTextBox.Focus();
+            // Hide the listview and the tooltip
+            textBoxTooltip.Hide();
+            GetGListBox().Hide();
         }
 
         private void CheckKeyPressed(KeyEventArgs e, string currentChar)
@@ -377,9 +420,18 @@ namespace Compliance.Editor
                 return true;
             }
         }
+
+        private void CodeTextBox_TextChanged(object sender, EventArgs e)
+        {
+            if (!_changedSinceLastSave)
+            {
+                textEditorTabControl.TabPages[0].Text += "*";
+                _changedSinceLastSave = true;
+            }
+        }
         #endregion
 
-        #region GListBox
+        #region List Box Operations
         private void AddGListBox(TabControl tabControl, int pageIndex)
         {
             var gListBox = new GListBox()
@@ -408,6 +460,11 @@ namespace Compliance.Editor
                                                                                               .First() as GListBox;
         }
 
+        private void GListBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            codeTextBox.Focus();
+        }
+
         private void GListBox_DoubleClick(object sender, EventArgs e)
         {
             var listBoxAutoComplete = GetGListBox();
@@ -420,11 +477,6 @@ namespace Compliance.Editor
                 codeTextBox.Focus();
                 _wordMatched = false;
             }
-        }
-
-        private void GListBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            codeTextBox.Focus();
         }
 
         private void GListBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -474,67 +526,29 @@ namespace Compliance.Editor
         }
         #endregion
 
-        private void InitializeListViews()
+        #region Tab Operations
+        private void SetUpTab(TabControl tabControl, int pageIndex)
         {
-            var tables = _simpleTablesInstance._tables;
-            tableListView.View = View.List;
-
-            foreach (var table in tables)
-            {
-                tableListView.Items.Add(table.Key.Capitalize(), table.Value);
-            }
-
-            var nominals = _simpleTablesInstance._nominalTable;
-            nominalListView.View = View.List;
-
-            foreach (var nominal in nominals)
-            {
-                nominalListView.Items.Add(nominal.Key.Capitalize(), nominal.Value);
-            }
+            codeTextBox.KeyDown += new KeyEventHandler(RichTextBox_KeyDown);
+            codeTextBox.MouseDown += new MouseEventHandler(RichTextBox_MouseDown);
+            //AddRichTextBox(tabControl, pageIndex);
+            AddGListBox(tabControl, pageIndex);
         }
 
-        private void EnableDragDropEvents()
+        private void OpenTab(TabControl tabControl, string fileName)
         {
-            tableListView.ItemDrag += new ItemDragEventHandler(TableListView_ItemDrag);
-            nominalListView.ItemDrag += new ItemDragEventHandler(NominalListView_ItemDrag);
-            codeTextBox.DragEnter += new DragEventHandler(CodeTextBox_DragEnter);
-            codeTextBox.DragDrop += new DragEventHandler(CodeTextBox_DragDrop);
-            codeTextBox.AllowDrop = true;
+            var tabPage = new TabPage(fileName);
+            tabControl.TabPages.Add(tabPage);
+            tabControl.SelectedTab = tabPage;
+            tabControl.DrawItem += new DrawItemEventHandler(TextEditorTabControl_DrawItem);
+            tabControl.MouseDown += new MouseEventHandler(TextEditorTabControl_MouseDown);
+            SetUpTab(tabControl, tabControl.TabPages.Count - 1);
         }
 
-        private void TableListView_ItemDrag(object sender, ItemDragEventArgs e)
+        private void CloseTab(TabControl tabControl, int i)
         {
-            tableListView.DoDragDrop(tableListView.SelectedItems, DragDropEffects.Move);
-        }
-
-        private void NominalListView_ItemDrag(object sender, ItemDragEventArgs e)
-        {
-            nominalListView.DoDragDrop(nominalListView.SelectedItems, DragDropEffects.Move);
-        }
-
-        private void CodeTextBox_DragEnter(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(typeof(ListView.SelectedListViewItemCollection)))
-            {
-                e.Effect = DragDropEffects.Move;
-            }
-        }
-
-        private void CodeTextBox_DragDrop(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(typeof(ListView.SelectedListViewItemCollection).ToString(), false))
-            {
-                var selectedListViewItems
-                    = (ListView.SelectedListViewItemCollection)e.Data.GetData(typeof(ListView.SelectedListViewItemCollection));
-
-                foreach (ListViewItem listItem in selectedListViewItems)
-                {
-                    var index = codeTextBox.GetCharIndexFromPosition(codeTextBox.PointToClient(Cursor.Position));
-                    codeTextBox.SelectionStart = index;
-                    codeTextBox.SelectionLength = 0;
-                    codeTextBox.SelectedText = listItem.ImageKey;
-                }
-            }
+            tabControl.TabPages.RemoveAt(i); // Ask if sure want to close?
+            _openFilePath = string.Empty;
         }
 
         private void UpdateEditorTabText(string fileName)
@@ -543,9 +557,120 @@ namespace Compliance.Editor
             textEditorTabControl.TabPages[0].Text = filenameWithoutExtension;
         }
 
-        private void OpenButton_Click(object sender, EventArgs e)
+        private RichTextBox GetTabTextBox(TabControl tabControl)
         {
-            LoadFile();
+            var pageIndex = tabControl.SelectedIndex;
+            return tabControl.SelectedTab.Controls.Find("richTextBox" + pageIndex, true)
+                                                                             .First() as RichTextBox;
+        }
+
+        private void TextEditorTabControl_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            _closeRecDistanceFromLeft = e.Bounds.Left + 2;
+            _tabItemsDistanceFromTop = e.Bounds.Top + 4;
+
+            e.Graphics.DrawString(
+                "x",
+                e.Font,
+                Brushes.Black,
+                _closeRecDistanceFromLeft,
+                _tabItemsDistanceFromTop);
+
+            e.Graphics.DrawString(
+                textEditorTabControl.TabPages[e.Index].Text,
+                e.Font,
+                Brushes.Black,
+                e.Bounds.Left + 12,
+                _tabItemsDistanceFromTop);
+
+            e.DrawFocusRectangle();
+        }
+
+        private void TextEditorTabControl_MouseDown(object sender, MouseEventArgs e)
+        {
+            for (int i = 0; i < textEditorTabControl.TabCount; i++)
+            {
+                var tabRecCloseButton = textEditorTabControl.GetTabRect(i);
+                tabRecCloseButton.Offset(_closeRecDistanceFromLeft, _tabItemsDistanceFromTop);
+                tabRecCloseButton.Width = 5;
+                tabRecCloseButton.Height = 10;
+
+                if (tabRecCloseButton.Contains(e.Location))
+                {
+                    if (!_changedSinceLastSave)
+                    {
+                        CloseTab(textEditorTabControl, i);
+                    }
+                    else
+                    {
+                        var saveChanges = MessageBox.Show(
+                            "You have unsaved changes. Do you want to save before closing this tab?",
+                            "Confirm",
+                            MessageBoxButtons.YesNoCancel,
+                            MessageBoxIcon.Question);
+
+                        if ((saveChanges == DialogResult.No) ||
+                            ((saveChanges == DialogResult.Yes) && SaveFile(_openFilePath)))
+                        {
+                            CloseTab(textEditorTabControl, i);
+                        }
+                        else if (saveChanges == DialogResult.Cancel)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        #endregion
+
+        #region File Operations
+        private bool SaveFile(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+            {
+                return SaveFileAs();
+            }
+
+            using (var streamWriter = new StreamWriter(fileName))
+            {
+                try
+                {
+                    streamWriter.Write(codeTextBox.Text);
+                    _changedSinceLastSave = false;
+                    _openFilePath = fileName;
+                    UpdateEditorTabText(fileName);
+                    MessageBox.Show("Saved.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        "Unable to save file. \nException: " + ex.Message,
+                        "Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+
+                    return false;
+                }
+            }
+        }
+
+        private bool SaveFileAs()
+        {
+            var saveFileDialog = new SaveFileDialog()
+            {
+                RestoreDirectory = true
+            };
+
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                return SaveFile(saveFileDialog.FileName);
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private void LoadFile()
@@ -609,114 +734,9 @@ namespace Compliance.Editor
                 }
             }
         }
+        #endregion
 
-        private void ClearCodeTextBox()
-        {
-            codeTextBox.Text = string.Empty;
-        }
-
-        private void SaveAsButton_Click(object sender, EventArgs e)
-        {
-            SaveFileAs();
-        }
-
-        private bool SaveFileAs()
-        {
-            var saveFileDialog = new SaveFileDialog()
-            {
-                RestoreDirectory = true
-            };
-
-            if (saveFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                return SaveFile(saveFileDialog.FileName);
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        private void SaveButton_Click(object sender, EventArgs e)
-        {
-            SaveFile(_openFilePath);
-        }
-
-        private bool SaveFile(string fileName)
-        {
-            if (string.IsNullOrEmpty(fileName))
-            {
-                return SaveFileAs();
-            }
-
-            using (var streamWriter = new StreamWriter(fileName))
-            {
-                try
-                {
-                    streamWriter.Write(codeTextBox.Text);
-                    _changedSinceLastSave = false;
-                    _openFilePath = fileName;
-                    UpdateEditorTabText(fileName);
-                    MessageBox.Show("Saved.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(
-                        "Unable to save file. \nException: " + ex.Message,
-                        "Error",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Error);
-
-                    return false;
-                }
-            }
-        }
-
-        private void NewTabToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenTab(textEditorTabControl, "<New tab>");
-        }
-
-        private void OpenTab(TabControl tabControl, string fileName)
-        {
-            var tabPage = new TabPage(fileName);
-            tabControl.TabPages.Add(tabPage);
-            tabControl.SelectedTab = tabPage;
-            tabControl.DrawItem += new DrawItemEventHandler(TextEditorTabControl_DrawItem);
-            tabControl.MouseDown += new MouseEventHandler(TextEditorTabControl_MouseDown);
-            SetUpTab(tabControl, tabControl.TabPages.Count - 1);
-        }
-
-        private void CloseTab(TabControl tabControl, int i)
-        {
-            tabControl.TabPages.RemoveAt(i); // Ask if sure want to close?
-            _openFilePath = string.Empty;
-        }
-
-        private void OpenToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            LoadFile();
-        }
-
-        private void SaveToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            SaveFile(_openFilePath);
-        }
-
-        private void SaveAsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            SaveFileAs();
-        }
-
-        private RichTextBox GetTabTextBox(TabControl tabControl)
-        {
-            var pageIndex = tabControl.SelectedIndex;
-            return tabControl.SelectedTab.Controls.Find("richTextBox" + pageIndex, true)
-                                                                             .First() as RichTextBox;
-        }
-
-        #region Working Intellisense
+        #region Other Intellisense Operations
         private void ReadAssembly()
         {
             treeViewItems.Nodes.Clear();
@@ -1031,36 +1051,6 @@ namespace Compliance.Editor
             }
         }
 
-        private void DisplayListBoxItemIcons(MemberItem[] items)
-        {
-            for (int n = 0; n < items.Length; n++)
-            {
-                var imageindex = 0;
-
-                if (items[n]._tag != null)
-                {
-                    imageindex = 2;
-                    if (items[n]._tag is MemberTypes memberType)
-                    {
-                        switch (memberType)
-                        {
-                            case MemberTypes.Custom:
-                                imageindex = 1;
-                                break;
-                            case MemberTypes.Property:
-                                imageindex = 3;
-                                break;
-                            case MemberTypes.Event:
-                                imageindex = 4;
-                                break;
-                        }
-                    }
-                }
-
-                GetGListBox().Items.Add(new GListBoxItem(items[n]._displayText, imageindex));
-            }
-        }
-
         private void SelectItem()
         {
             if (_wordMatched)
@@ -1108,7 +1098,38 @@ namespace Compliance.Editor
             return word.Trim();
         }
 
-        #region testing
+        private void DisplayListBoxItemIcons(MemberItem[] items)
+        {
+            for (int n = 0; n < items.Length; n++)
+            {
+                var imageindex = 0;
+
+                if (items[n]._tag != null)
+                {
+                    imageindex = 2;
+                    if (items[n]._tag is MemberTypes memberType)
+                    {
+                        switch (memberType)
+                        {
+                            case MemberTypes.Custom:
+                                imageindex = 1;
+                                break;
+                            case MemberTypes.Property:
+                                imageindex = 3;
+                                break;
+                            case MemberTypes.Event:
+                                imageindex = 4;
+                                break;
+                        }
+                    }
+                }
+
+                GetGListBox().Items.Add(new GListBoxItem(items[n]._displayText, imageindex));
+            }
+        }
+        #endregion
+
+        #region Debugging
         private int index = 0;
 
         private string[] DebugPrintTreeView(TreeNode treeNode, string[] treeArray, int index)
@@ -1127,7 +1148,7 @@ namespace Compliance.Editor
         private void DebugCallRecursive()
         {
             var nodes = treeViewItems.Nodes;
-            var treeArray = new string[nodes.Count * 2];
+            var treeArray = new string[(nodes.Count * 2) + 1];
 
             for (int i = 0; i < nodes.Count; i++)
             {
@@ -1142,165 +1163,5 @@ namespace Compliance.Editor
             }
         }
         #endregion
-
-        #endregion
-
-        #region Intellisense
-        //private GListBox GetGListBox(TabControl tabControl)
-        //{
-        //    var pageIndex = tabControl.SelectedIndex;
-        //    return tabControl.SelectedTab.Controls.Find("GListBox" + pageIndex, true)
-        //                                                                     .First() as GListBox;
-        //}
-
-        //private void LoadAssembly() // Rename? Just loads dictionary into tree view hierarchy
-        //{
-        //    _dictionaries = new Hashtable(); // Rename namespaces?
-        //    treeViewItems.Nodes.Clear();
-
-        //    try
-        //    {
-        //        _assembly = Assembly.Load("Intellisense");
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        MessageBox.Show("Could not load the assembly file.\nException message: " + e.Message);
-        //        return;
-        //    }
-
-        //    var assemblyTypes = _assembly.GetTypes();
-        //    _dictionaries = new Hashtable();
-        //    //namespaces = new Hashtable();
-
-        //    foreach (var type in assemblyTypes)
-        //    {
-        //        if (type.IsClass)
-        //        {
-        //            AddClassDictionariesToTree(type);
-        //        }
-
-        //        //AddNamespacesToTree(type);
-        //    }
-
-        //    DebugCallRecursive();
-        //}
-
-        //private void AddClassDictionariesToTree(Type type)
-        //{
-        //    var instance = Activator.CreateInstance(type);
-
-        //    var instanceVariables = instance.GetType()
-        //                                                         .GetFields()
-        //                                                         .Select(field => field.GetValue(instance))
-        //                                                         .ToList();
-
-        //    foreach (var variable in instanceVariables)
-        //    {
-        //        var variableType = variable.GetType();
-        //        var isDictionary =
-        //            variableType.IsGenericType && variableType.GetGenericTypeDefinition() == typeof(Dictionary<,>);
-
-        //        if (isDictionary)
-        //        {
-        //            var dictionary = (Dictionary<string, string>)null;
-
-        //            try
-        //            {
-        //                dictionary = (Dictionary<string, string>)variable;
-        //            }
-        //            catch (Exception e)
-        //            {
-        //                MessageBox.Show("Could not build the hashtable required.\nException message: " + e.Message);
-        //                return;
-        //            }
-
-        //            ProcessDictionaryItems(dictionary, type);
-        //        }
-        //    }
-        //}
-
-        //private int index = 0;
-
-        //private string[] DebugPrintTreeView(TreeNode treeNode, string[] treeArray, int index)
-        //{
-        //    treeArray[index] = treeNode.Text;
-        //    index++;
-
-        //    foreach (var tn in treeNode.Nodes)
-        //    {
-        //        treeArray = DebugPrintTreeView((TreeNode)tn, treeArray, index);
-        //    }
-
-        //    return treeArray;
-        //}
-
-        //private void DebugCallRecursive()
-        //{
-        //    var treeArray = new string[20];
-        //    var nodes = treeViewItems.Nodes;
-
-        //    foreach (var n in nodes)
-        //    {
-        //        treeArray = DebugPrintTreeView((TreeNode)n, treeArray, index);
-        //    }
-
-        //    var printString = string.Empty;
-        //    foreach (var item in treeArray)
-        //    {
-        //        printString += "\n" + item;
-        //    }
-
-        //    MessageBox.Show(printString);
-        //}
-
-        //private void AddMembers(TreeNode treeNode, Type type)
-        //{
-        //    // Get all members except methods
-        //    var memberInfo = type.GetMembers();
-
-        //    for (int j = 0; j < memberInfo.Length; j++)
-        //    {
-        //        if (memberInfo[j].ReflectedType.IsPublic 
-        //            && memberInfo[j].MemberType != MemberTypes.Method)
-        //        {
-        //            var node = treeNode.Nodes.Add(memberInfo[j].Name);
-        //            node.Tag = memberInfo[j].MemberType;
-        //        }
-        //    }
-
-        //    // Get all methods
-        //    var methodInfo = type.GetMethods();
-
-        //    for (int j = 0; j < methodInfo.Length; j++)
-        //    {
-        //        var node = treeNode.Nodes.Add(methodInfo[j].Name);
-        //        string parms = string.Empty;
-
-        //        var parameterInfo = methodInfo[j].GetParameters();
-
-        //        for (int f = 0; f < parameterInfo.Length; f++)
-        //        {
-        //            parms += parameterInfo[f].ParameterType.ToString() + " " + parameterInfo[f].Name + ", ";
-        //        }
-
-        //        // Knock off remaining ", "
-        //        if (parms.Length > 2)
-        //        {
-        //            parms = parms.Substring(0, parms.Length - 2);
-        //        }
-
-        //        node.Tag = parms;
-        //    }
-        //}
-        #endregion
-
-        private void CodeTextBox_TextChanged(object sender, EventArgs e)
-        {
-            if (!_changedSinceLastSave)
-            {
-                textEditorTabControl.TabPages[0].Text += "*";
-                _changedSinceLastSave = true;
-            }
-        }
     }
 }
