@@ -58,6 +58,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="GListBoxItem.cs" />
+    <Compile Include="MemberItem.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="_stylecop\GlobalSuppressions.cs" />

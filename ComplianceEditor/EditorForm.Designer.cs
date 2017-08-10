@@ -30,19 +30,22 @@ namespace Compliance.Editor
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(EditorForm));
             this.toolsTabControl = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.tableListView = new System.Windows.Forms.ListView();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.nominalListView = new System.Windows.Forms.ListView();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.textBoxTabControl = new System.Windows.Forms.TabControl();
+            this.textEditorTabControl = new System.Windows.Forms.TabControl();
             this.tabPage3 = new System.Windows.Forms.TabPage();
             this.codeTextBox = new System.Windows.Forms.RichTextBox();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.textBoxTooltip = new System.Windows.Forms.TextBox();
             this.treeViewItems = new System.Windows.Forms.TreeView();
-            this.treeView = new System.Windows.Forms.TreeView();
             this.saveAsButton = new System.Windows.Forms.Button();
+            this._statusBar1 = new System.Windows.Forms.StatusBar();
             this.openButton = new System.Windows.Forms.Button();
             this.saveButton = new System.Windows.Forms.Button();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
@@ -51,11 +54,12 @@ namespace Compliance.Editor
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.imageList1 = new System.Windows.Forms.ImageList(this.components);
             this.toolsTabControl.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
             this.panel1.SuspendLayout();
-            this.textBoxTabControl.SuspendLayout();
+            this.textEditorTabControl.SuspendLayout();
             this.tabPage3.SuspendLayout();
             this.panel2.SuspendLayout();
             this.menuStrip1.SuspendLayout();
@@ -124,23 +128,23 @@ namespace Compliance.Editor
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.panel1.Controls.Add(this.textBoxTabControl);
+            this.panel1.Controls.Add(this.textEditorTabControl);
             this.panel1.Controls.Add(this.toolsTabControl);
             this.panel1.Location = new System.Drawing.Point(13, 28);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(822, 563);
             this.panel1.TabIndex = 3;
             // 
-            // textBoxTabControl
+            // textEditorTabControl
             // 
-            this.textBoxTabControl.Controls.Add(this.tabPage3);
-            this.textBoxTabControl.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
-            this.textBoxTabControl.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxTabControl.Location = new System.Drawing.Point(3, 3);
-            this.textBoxTabControl.Name = "textBoxTabControl";
-            this.textBoxTabControl.SelectedIndex = 0;
-            this.textBoxTabControl.Size = new System.Drawing.Size(473, 553);
-            this.textBoxTabControl.TabIndex = 3;
+            this.textEditorTabControl.Controls.Add(this.tabPage3);
+            this.textEditorTabControl.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
+            this.textEditorTabControl.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textEditorTabControl.Location = new System.Drawing.Point(3, 3);
+            this.textEditorTabControl.Name = "textEditorTabControl";
+            this.textEditorTabControl.SelectedIndex = 0;
+            this.textEditorTabControl.Size = new System.Drawing.Size(473, 553);
+            this.textEditorTabControl.TabIndex = 3;
             // 
             // tabPage3
             // 
@@ -171,8 +175,8 @@ namespace Compliance.Editor
             this.panel2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel2.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.panel2.Controls.Add(this.textBoxTooltip);
             this.panel2.Controls.Add(this.treeViewItems);
-            this.panel2.Controls.Add(this.treeView);
             this.panel2.Controls.Add(this.saveAsButton);
             this.panel2.Controls.Add(this.openButton);
             this.panel2.Controls.Add(this.saveButton);
@@ -181,21 +185,33 @@ namespace Compliance.Editor
             this.panel2.Size = new System.Drawing.Size(823, 42);
             this.panel2.TabIndex = 4;
             // 
+            // textBoxTooltip
+            // 
+            this.textBoxTooltip.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(225)))));
+            this.textBoxTooltip.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.textBoxTooltip.Location = new System.Drawing.Point(716, 3);
+            this.textBoxTooltip.Multiline = true;
+            this.textBoxTooltip.Name = "textBoxTooltip";
+            this.textBoxTooltip.ReadOnly = true;
+            this.textBoxTooltip.Size = new System.Drawing.Size(100, 20);
+            this.textBoxTooltip.TabIndex = 5;
+            this.textBoxTooltip.Visible = false;
+            this.textBoxTooltip.Enter += new System.EventHandler(this.TextBoxTooltip_Enter);
+            // 
             // treeViewItems
             // 
-            this.treeViewItems.Location = new System.Drawing.Point(426, 3);
+            var rootTreeNode = new TreeNode("Intellisense")
+            {
+                Name = string.Empty
+            };
+            this.treeViewItems.Nodes.AddRange(new TreeNode[] { rootTreeNode });
+            this.treeViewItems.FullRowSelect = true;
+            this.treeViewItems.PathSeparator = "_";
+            this.treeViewItems.Location = new System.Drawing.Point(589, 3);
             this.treeViewItems.Name = "treeViewItems";
             this.treeViewItems.Size = new System.Drawing.Size(121, 32);
             this.treeViewItems.TabIndex = 7;
             this.treeViewItems.Visible = false;
-            // 
-            // treeView
-            // 
-            this.treeView.Location = new System.Drawing.Point(553, 3);
-            this.treeView.Name = "treeView";
-            this.treeView.Size = new System.Drawing.Size(263, 32);
-            this.treeView.TabIndex = 6;
-            this.treeView.Visible = false;
             // 
             // saveAsButton
             // 
@@ -295,6 +311,23 @@ namespace Compliance.Editor
             this.saveAsToolStripMenuItem.Text = "Save As";
             this.saveAsToolStripMenuItem.Click += new System.EventHandler(this.SaveAsToolStripMenuItem_Click);
             // 
+            // imageList1
+            // 
+            this.imageList1.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList1.ImageStream")));
+            this.imageList1.TransparentColor = System.Drawing.Color.Lime;
+            this.imageList1.Images.SetKeyName(0, "");
+            this.imageList1.Images.SetKeyName(1, "");
+            this.imageList1.Images.SetKeyName(2, "");
+            this.imageList1.Images.SetKeyName(3, "");
+            this.imageList1.Images.SetKeyName(4, "");
+            //
+            // statusBar1
+            //
+            this._statusBar1.Location = new System.Drawing.Point(0, 355);
+            this._statusBar1.Name = "statusBar1";
+            this._statusBar1.Size = new System.Drawing.Size(560, 22);
+            this._statusBar1.TabIndex = 2;
+            // 
             // EditorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -312,9 +345,10 @@ namespace Compliance.Editor
             this.tabPage1.ResumeLayout(false);
             this.tabPage2.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
-            this.textBoxTabControl.ResumeLayout(false);
+            this.textEditorTabControl.ResumeLayout(false);
             this.tabPage3.ResumeLayout(false);
             this.panel2.ResumeLayout(false);
+            this.panel2.PerformLayout();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.ResumeLayout(false);
@@ -335,15 +369,16 @@ namespace Compliance.Editor
         private System.Windows.Forms.ListView nominalListView;
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
-        private System.Windows.Forms.TreeView treeView;
-        private System.Windows.Forms.ToolStripMenuItem newTabToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem openToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem saveAsToolStripMenuItem;
         private TreeView treeViewItems;
-        private TabControl textBoxTabControl;
+        private TabControl textEditorTabControl;
         private TabPage tabPage3;
         private RichTextBox codeTextBox;
+        private ToolStripMenuItem newTabToolStripMenuItem;
+        private ImageList imageList1;
+        private TextBox textBoxTooltip;
     }
 }
 
