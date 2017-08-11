@@ -37,7 +37,6 @@ namespace Compliance.Intellisense
 
         public void Test_method_1(string name)
         {
-
         }
 
         public void Test_method_2(int num)
