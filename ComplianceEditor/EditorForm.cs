@@ -11,19 +11,19 @@ namespace Compliance.Editor
 {
     public partial class EditorForm : Form
     {
+        private bool[] _tabTextBoxModified;
+        private string[] _openTabFilePaths;
         private int _closeRecDistanceFromLeft;
         private int _maxNumTabs = 10;
         private int _tabItemsDistanceFromTop;
         private Simple_Tables _simpleTablesInstance = new Simple_Tables();
 
-        private bool[] _tabsChangedSinceSave;
-        private string[] _openTabFilePaths;
-
+        #region Initialisation Functions
         public EditorForm()
         {
-            _tabsChangedSinceSave = new bool[_maxNumTabs];
+            _tabTextBoxModified = new bool[_maxNumTabs];
             _openTabFilePaths = new string[_maxNumTabs];
-            _tabsChangedSinceSave.Initialize();
+            _tabTextBoxModified.Initialize();
             _openTabFilePaths.Initialize();
 
             InitializeComponent();
@@ -40,58 +40,6 @@ namespace Compliance.Editor
 
             toolsTabControl.TabPages[0].Text = "Tables";
             toolsTabControl.TabPages[1].Text = "Nominal";
-        }
-
-        private void AddRichTextBox(TabControl tabControl, int pageIndex)
-        {
-            var richTextBox = new RichTextBox()
-            {
-                Location = new Point(5, 5),
-                WordWrap = false,
-                ScrollBars = RichTextBoxScrollBars.Both,
-                AcceptsTab = true,
-                Parent = tabControl.SelectedTab,
-
-                Anchor =
-                    AnchorStyles.Top
-                    | AnchorStyles.Bottom
-                    | AnchorStyles.Left
-                    | AnchorStyles.Right,
-
-                Size = new Size(
-                    ClientSize.Width - 390,
-                    ClientSize.Height - 137)
-            };
-
-            tabControl.TabPages[pageIndex].Controls.Add(richTextBox);
-            richTextBox = EnableTextBoxDragDropEvents(tabControl, richTextBox);
-            richTextBox.TextChanged += new EventHandler(TextBox_TextChanged);
-        }
-
-        private void TextBox_TextChanged(object sender, EventArgs e)
-        {
-            var pageIndex = textEditorTabControl.SelectedIndex;
-
-            if (!_tabsChangedSinceSave[pageIndex])
-            {
-                textEditorTabControl.TabPages[pageIndex].Text += "*";
-                _tabsChangedSinceSave[pageIndex] = true;
-            }
-        }
-
-        private void TextBoxTabControl_DrawItem(object sender, DrawItemEventArgs e)
-        {
-            _closeRecDistanceFromLeft = e.Bounds.Right - 18;
-            _tabItemsDistanceFromTop = e.Bounds.Top + 4;
-
-            e.Graphics.DrawString(
-                textEditorTabControl.TabPages[e.Index].Text,
-                e.Font,
-                Brushes.Black,
-                e.Bounds.Left + 5,
-                _tabItemsDistanceFromTop);
-
-            e.DrawFocusRectangle();
         }
 
         private void InitializeListViews()
@@ -123,7 +71,68 @@ namespace Compliance.Editor
 
             listView.Columns[0].Width = -2;
         }
+        #endregion
 
+        #region Textbox Functions
+        private void AddRichTextBox(TabControl tabControl, int pageIndex)
+        {
+            var richTextBox = new RichTextBox()
+            {
+                Location = new Point(5, 5),
+                WordWrap = false,
+                ScrollBars = RichTextBoxScrollBars.Both,
+                AcceptsTab = true,
+                Parent = tabControl.SelectedTab,
+
+                Anchor =
+                    AnchorStyles.Top
+                    | AnchorStyles.Bottom
+                    | AnchorStyles.Left
+                    | AnchorStyles.Right,
+
+                Size = new Size(
+                    ClientSize.Width - 390,
+                    ClientSize.Height - 137)
+            };
+
+            tabControl.TabPages[pageIndex].Controls.Add(richTextBox);
+            richTextBox = EnableTextBoxDragDropEvents(tabControl, richTextBox);
+            richTextBox.TextChanged += new EventHandler(TextBox_TextChanged);
+        }
+
+        private RichTextBox GetTabTextBox(TabControl tabControl)
+        {
+            return tabControl.SelectedTab.Controls.OfType<RichTextBox>().First();
+        }
+
+        private void TextBox_TextChanged(object sender, EventArgs e)
+        {
+            var pageIndex = textEditorTabControl.SelectedIndex;
+
+            if (!_tabTextBoxModified[pageIndex])
+            {
+                textEditorTabControl.TabPages[pageIndex].Text += "*";
+                _tabTextBoxModified[pageIndex] = true;
+            }
+        }
+
+        private void TextBoxTabControl_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            _closeRecDistanceFromLeft = e.Bounds.Right - 18;
+            _tabItemsDistanceFromTop = e.Bounds.Top + 4;
+
+            e.Graphics.DrawString(
+                textEditorTabControl.TabPages[e.Index].Text,
+                e.Font,
+                Brushes.Black,
+                e.Bounds.Left + 5,
+                _tabItemsDistanceFromTop);
+
+            e.DrawFocusRectangle();
+        }
+        #endregion
+
+        #region Drag and Drop Setup Functions
         private void EnableListDragDropEvents()
         {
             tableListView.ItemDrag += new ItemDragEventHandler(TableListView_ItemDrag);
@@ -180,14 +189,15 @@ namespace Compliance.Editor
                 }
             }
         }
+        #endregion
 
-        private void UpdateTextEditorTabText(string fileName)
+        #region Open File Functions
+        private void OpenButton_Click(object sender, EventArgs e)
         {
-            var filenameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
-            textEditorTabControl.TabPages[textEditorTabControl.SelectedIndex].Text = filenameWithoutExtension;
+            OpenFile();
         }
 
-        private void OpenButton_Click(object sender, EventArgs e)
+        private void OpenToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenFile();
         }
@@ -210,8 +220,9 @@ namespace Compliance.Editor
                 }
                 else
                 {
-                    OpenTab(textEditorTabControl, fileName);
+                    OpenTab(fileName);
                     ReadFile(openFileDialog);
+                    UpdateTextEditorTabVariables(textEditorTabControl.SelectedIndex, openFileDialog.FileName);
                 }
             }
         }
@@ -230,10 +241,6 @@ namespace Compliance.Editor
                     {
                         richTextBox.AppendText(line + "\n");
                     }
-
-                    _tabsChangedSinceSave[textEditorTabControl.SelectedIndex] = false; // Updating bc changing text triggers text changed event
-
-                    UpdateTextEditorTabText(openFileDialog.FileName);
                 }
                 catch (Exception ex)
                 {
@@ -245,146 +252,9 @@ namespace Compliance.Editor
                 }
             }
         }
+        #endregion
 
-        private void SaveAsButton_Click(object sender, EventArgs e)
-        {
-            SaveFileAs();
-        }
-
-        private bool SaveFileAs()
-        {
-            var saveFileDialog = new SaveFileDialog()
-            {
-                RestoreDirectory = true
-            };
-
-            if (saveFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                return SaveFile(saveFileDialog.FileName);
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        private void SaveButton_Click(object sender, EventArgs e)
-        {
-            SaveFile(_openTabFilePaths[textEditorTabControl.SelectedIndex]);
-        }
-
-        private bool SaveFile(string fileName)
-        {
-            if (string.IsNullOrEmpty(fileName))
-            {
-                return SaveFileAs();
-            }
-            else
-            {
-                var selectedIndex = textEditorTabControl.SelectedIndex;
-                if (!_tabsChangedSinceSave[selectedIndex])
-                {
-                    return false;
-                }
-                else
-                {
-                    using (var streamWriter = new StreamWriter(fileName))
-                    {
-                        try
-                        {
-                            streamWriter.Write(GetTabTextBox(textEditorTabControl).Text);
-
-                            var pageIndex = textEditorTabControl.SelectedIndex;
-                            _tabsChangedSinceSave[pageIndex] = false;
-                            _openTabFilePaths[pageIndex] = fileName;
-                            UpdateTextEditorTabText(fileName);
-                            MessageBox.Show("Saved.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            return true;
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show(
-                                "Unable to save file. \nException: " + ex.Message,
-                                "Error",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Error);
-
-                            return false;
-                        }
-                    }
-                }
-            }
-        }
-
-        private void NewTabToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenTab(textEditorTabControl, "<New File>");
-        }
-
-        private void OpenTab(TabControl tabControl, string fileName)
-        {
-            if (tabControl.TabPages.Count < _maxNumTabs)
-            {
-                var tabPage = new TabPage(fileName)
-                {
-                    BackColor = Color.White
-                };
-
-                tabControl.TabPages.Add(tabPage);
-                tabControl.SelectedTab = tabPage;
-                tabControl.DrawItem += new DrawItemEventHandler(TextBoxTabControl_DrawItem);
-                _openTabFilePaths[tabControl.SelectedIndex] = fileName;
-                _tabsChangedSinceSave[tabControl.SelectedIndex] = false;
-                AddRichTextBox(tabControl, tabControl.TabPages.Count - 1);
-            }
-            else
-            {
-                MessageBox.Show(
-                    "You already have the maximum number of tabs open.",
-                    "Information",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-            }
-        }
-
-        private void CloseTab(TabControl tabControl)
-        {
-            var closingTabPageIndex = tabControl.SelectedIndex;
-
-            if (_tabsChangedSinceSave[closingTabPageIndex])
-            {
-                var saveChanges = MessageBox.Show(
-                            "You have unsaved changes. Do you want to save them first?",
-                            "Confirm",
-                            MessageBoxButtons.YesNoCancel,
-                            MessageBoxIcon.Question);
-
-                if (saveChanges == DialogResult.Yes)
-                {
-                    SaveFile(_openTabFilePaths[closingTabPageIndex]);
-                }
-                else if (saveChanges == DialogResult.Cancel)
-                {
-                    return;
-                }
-            }
-
-            tabControl.TabPages.RemoveAt(closingTabPageIndex);
-            _openTabFilePaths[closingTabPageIndex] = null;
-            _tabsChangedSinceSave[closingTabPageIndex] = false;
-
-            for (int i = closingTabPageIndex; i < tabControl.TabPages.Count; i++)
-            {
-                _openTabFilePaths[i] = _openTabFilePaths[i + 1];
-                _tabsChangedSinceSave[i] = _tabsChangedSinceSave[i + 1];
-            }
-        }
-
-        private void OpenToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenFile();
-        }
-
+        #region Save File Functions
         private void SaveToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SaveFile(_openTabFilePaths[textEditorTabControl.SelectedIndex]);
@@ -395,9 +265,108 @@ namespace Compliance.Editor
             SaveFileAs();
         }
 
-        private RichTextBox GetTabTextBox(TabControl tabControl)
+        private void SaveButton_Click(object sender, EventArgs e)
         {
-            return tabControl.SelectedTab.Controls.OfType<RichTextBox>().First();
+            SaveFile(_openTabFilePaths[textEditorTabControl.SelectedIndex]);
+        }
+
+        private void SaveAsButton_Click(object sender, EventArgs e)
+        {
+            SaveFileAs();
+        }
+
+        private void SaveFile(string fileName)
+        {
+            var pageIndex = textEditorTabControl.SelectedIndex;
+
+            if (string.IsNullOrEmpty(fileName))
+            {
+                SaveFileAs();
+                return;
+            }
+            else if (!_tabTextBoxModified[pageIndex])
+            {
+                return;
+            }
+
+            if (WriteToFile(fileName))
+            {
+                UpdateTextEditorTabVariables(pageIndex, fileName);
+            }
+        }
+
+        private void SaveFileAs()
+        {
+            var pageIndex = textEditorTabControl.SelectedIndex;
+
+            var saveFileDialog = new SaveFileDialog()
+            {
+                RestoreDirectory = true
+            };
+
+            if ((saveFileDialog.ShowDialog() == DialogResult.OK)
+                && WriteToFile(saveFileDialog.FileName))
+            {
+                UpdateTextEditorTabVariables(pageIndex, saveFileDialog.FileName);
+            }
+        }
+
+        private bool WriteToFile(string fileName)
+        {
+            using (var streamWriter = new StreamWriter(fileName)) // Got error: file cannot be null
+            {
+                try
+                {
+                    streamWriter.Write(GetTabTextBox(textEditorTabControl).Text);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        "Unable to save file. \nException: " + ex.Message,
+                        "Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+
+                    return false;
+                }
+            }
+        }
+        #endregion
+
+        #region Text Editor Tab Functions
+        private void NewTabToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenTab("<New File>");
+        }
+
+        private void OpenTab(string fileName)
+        {
+            var tabPages = textEditorTabControl.TabPages;
+
+            if (textEditorTabControl.TabPages.Count < _maxNumTabs)
+            {
+                var tabPage = new TabPage(fileName)
+                {
+                    BackColor = Color.White
+                };
+
+                tabPages.Add(tabPage);
+                textEditorTabControl.SelectedTab = tabPage;
+                textEditorTabControl.DrawItem += new DrawItemEventHandler(TextBoxTabControl_DrawItem);
+
+                _openTabFilePaths[textEditorTabControl.SelectedIndex] = fileName;
+                _tabTextBoxModified[textEditorTabControl.SelectedIndex] = false;
+                AddRichTextBox(textEditorTabControl, tabPages.Count - 1);
+            }
+            else
+            {
+                MessageBox.Show(
+                    "You already have the maximum number of tabs open.",
+                    "Information",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
         }
 
         private void CloseTabToolStripMenuItem_Click(object sender, EventArgs e)
@@ -418,5 +387,49 @@ namespace Compliance.Editor
                 }
             }
         }
+
+        private void CloseTab(TabControl tabControl)
+        {
+            var closingTabPageIndex = tabControl.SelectedIndex;
+
+            if (_tabTextBoxModified[closingTabPageIndex])
+            {
+                var saveChanges = MessageBox.Show(
+                            "You have unsaved changes. Do you want to save them first?",
+                            "Confirm",
+                            MessageBoxButtons.YesNoCancel,
+                            MessageBoxIcon.Question);
+
+                if (saveChanges == DialogResult.Yes)
+                {
+                    SaveFile(_openTabFilePaths[closingTabPageIndex]);
+                }
+                else if (saveChanges == DialogResult.Cancel)
+                {
+                    return;
+                }
+            }
+
+            tabControl.TabPages.RemoveAt(closingTabPageIndex);
+            _openTabFilePaths[closingTabPageIndex] = null;
+            _tabTextBoxModified[closingTabPageIndex] = false;
+
+            for (int i = closingTabPageIndex; i < tabControl.TabPages.Count; i++)
+            {
+                _openTabFilePaths[i] = _openTabFilePaths[i + 1];
+                _tabTextBoxModified[i] = _tabTextBoxModified[i + 1];
+            }
+        }
+
+        private void UpdateTextEditorTabVariables(int pageIndex, string fileName)
+        {
+            var filenameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+            textEditorTabControl.TabPages[textEditorTabControl.SelectedIndex].Text = filenameWithoutExtension;
+            _tabTextBoxModified[pageIndex] = false;
+            _openTabFilePaths[pageIndex] = fileName;
+        }
+        #endregion
+
+        // Update drag and drop menus!!!
     }
 }
