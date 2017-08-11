@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using Compliance.Intellisense;
-using ComplianceEditor;
 
 namespace Compliance.Editor
 {
@@ -100,9 +99,9 @@ namespace Compliance.Editor
             richTextBox.TextChanged += new EventHandler(TextBox_TextChanged);
         }
 
-        private RichTextBox GetTabTextBox(TabControl tabControl)
+        private RichTextBox GetTabTextBox()
         {
-            return tabControl.SelectedTab.Controls.OfType<RichTextBox>().First();
+            return textEditorTabControl.SelectedTab.Controls.OfType<RichTextBox>().First();
         }
 
         private void TextBox_TextChanged(object sender, EventArgs e)
@@ -167,7 +166,7 @@ namespace Compliance.Editor
 
         private void TextBox_DragDrop(object sender, DragEventArgs e)
         {
-            var richTextBox = GetTabTextBox(textEditorTabControl);
+            var richTextBox = GetTabTextBox();
 
             if (richTextBox == null)
             {
@@ -221,14 +220,14 @@ namespace Compliance.Editor
                 {
                     OpenTab(fileName);
                     ReadFile(openFileDialog);
-                    UpdateTextEditorTabText(textEditorTabControl.SelectedIndex, fileName);
+                    UpdateTextEditorTab(textEditorTabControl.SelectedIndex, fileName, false);
                 }
             }
         }
 
         private void ReadFile(OpenFileDialog openFileDialog)
         {
-            var richTextBox = GetTabTextBox(textEditorTabControl);
+            var richTextBox = GetTabTextBox();
 
             using (var streamReader = new StreamReader(openFileDialog.OpenFile()))
             {
@@ -290,7 +289,7 @@ namespace Compliance.Editor
 
             if (WriteToFile(fileName))
             {
-                UpdateTextEditorTabText(pageIndex, fileName);
+                UpdateTextEditorTab(pageIndex, fileName, false);
             }
         }
 
@@ -306,7 +305,7 @@ namespace Compliance.Editor
             if ((saveFileDialog.ShowDialog() == DialogResult.OK)
                 && WriteToFile(saveFileDialog.FileName))
             {
-                UpdateTextEditorTabText(pageIndex, saveFileDialog.FileName);
+                UpdateTextEditorTab(pageIndex, saveFileDialog.FileName, false);
             }
         }
 
@@ -316,7 +315,7 @@ namespace Compliance.Editor
             {
                 try
                 {
-                    streamWriter.Write(GetTabTextBox(textEditorTabControl).Text);
+                    streamWriter.Write(GetTabTextBox().Text);
                     return true;
                 }
                 catch (Exception ex)
@@ -354,7 +353,7 @@ namespace Compliance.Editor
                 textEditorTabControl.SelectedTab = tabPage;
                 textEditorTabControl.DrawItem += new DrawItemEventHandler(TextBoxTabControl_DrawItem);
 
-                UpdateTextEditorTabText(textEditorTabControl.SelectedIndex, fileName);
+                UpdateTextEditorTab(textEditorTabControl.SelectedIndex, fileName, false);
                 AddRichTextBox(textEditorTabControl, tabPages.Count - 1);
             }
             else
@@ -409,8 +408,7 @@ namespace Compliance.Editor
             }
 
             tabControl.TabPages.RemoveAt(closingTabPageIndex);
-            _openTabFilePaths[closingTabPageIndex] = null;
-            _tabTextBoxModified[closingTabPageIndex] = false;
+            SetTabArrayItems(closingTabPageIndex, null, false);
 
             for (int i = closingTabPageIndex; i < tabControl.TabPages.Count; i++)
             {
@@ -419,7 +417,7 @@ namespace Compliance.Editor
             }
         }
 
-        private void UpdateTextEditorTabText(int pageIndex, string fileName)
+        private void UpdateTextEditorTab(int pageIndex, string fileName, bool modified)
         {
             var fileNameWithoutExtension = string.Empty;
 
@@ -433,12 +431,12 @@ namespace Compliance.Editor
             }
 
             textEditorTabControl.TabPages[pageIndex].Text = fileNameWithoutExtension;
-            SetUpTabArrayItems(pageIndex, fileName);
+            SetTabArrayItems(pageIndex, fileName, modified);
         }
 
-        private void SetUpTabArrayItems(int pageIndex, string fileName)
+        private void SetTabArrayItems(int pageIndex, string fileName, bool modified)
         {
-            _tabTextBoxModified[pageIndex] = false;
+            _tabTextBoxModified[pageIndex] = modified;
             _openTabFilePaths[pageIndex] = fileName;
         }
         #endregion
