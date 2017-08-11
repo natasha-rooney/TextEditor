@@ -13,9 +13,9 @@ namespace Compliance.Editor
         private bool[] _tabTextBoxModified;
         private string[] _openTabFilePaths;
         private int _closeRecDistanceFromLeft;
-        private int _maxNumTabs = 10;
+        private int _maxNumTabs = 20;
         private int _tabItemsDistanceFromTop;
-        private Simple_Tables _simpleTablesInstance = new Simple_Tables();
+        private Groups _groups = new Groups();
 
         #region Initialisation Functions
         public EditorForm()
@@ -43,10 +43,10 @@ namespace Compliance.Editor
 
         private void InitializeListViews()
         {
-            var tables = _simpleTablesInstance._tables;
+            var tables = _groups._tables;
             SetUpList(tables, tableListView, "Tables");
 
-            var nominals = _simpleTablesInstance._nominalTable;
+            var nominals = _groups._nominal_groups;
             SetUpList(nominals, nominalListView, "Nominals");
         }
 
@@ -370,9 +370,8 @@ namespace Compliance.Editor
         {
             var closingTabPageIndex = textEditorTabControl.SelectedIndex;
             var tabPages = textEditorTabControl.TabPages;
-            CloseTab(textEditorTabControl);
 
-            if (textEditorTabControl.TabPages.Count > 0)
+            if (CloseTab() && (tabPages.Count > 0))
             {
                 if (closingTabPageIndex != 0)
                 {
@@ -385,36 +384,43 @@ namespace Compliance.Editor
             }
         }
 
-        private void CloseTab(TabControl tabControl)
+        private bool CloseTab()
         {
-            var closingTabPageIndex = tabControl.SelectedIndex;
+            var closingTabPageIndex = textEditorTabControl.SelectedIndex;
+            var tabPages = textEditorTabControl.TabPages;
 
-            if (_tabTextBoxModified[closingTabPageIndex])
+            if (tabPages.Count > 0)
             {
-                var saveChanges = MessageBox.Show(
-                            "You have unsaved changes. Do you want to save them first?",
-                            "Confirm",
-                            MessageBoxButtons.YesNoCancel,
-                            MessageBoxIcon.Question);
+                if (_tabTextBoxModified[closingTabPageIndex])
+                {
+                    var saveChanges = MessageBox.Show(
+                                "You have unsaved changes. Do you want to save them first?",
+                                "Confirm",
+                                MessageBoxButtons.YesNoCancel,
+                                MessageBoxIcon.Question);
 
-                if (saveChanges == DialogResult.Yes)
-                {
-                    SaveFile(_openTabFilePaths[closingTabPageIndex]);
+                    if (saveChanges == DialogResult.Yes)
+                    {
+                        SaveFile(_openTabFilePaths[closingTabPageIndex]);
+                    }
+                    else if (saveChanges == DialogResult.Cancel)
+                    {
+                        return false;
+                    }
                 }
-                else if (saveChanges == DialogResult.Cancel)
+
+                tabPages.RemoveAt(closingTabPageIndex);
+                SetTabArrayItems(closingTabPageIndex, null, false);
+
+                for (int i = closingTabPageIndex; i < tabPages.Count; i++)
                 {
-                    return;
+                    SetTabArrayItems(i, _openTabFilePaths[i + 1], _tabTextBoxModified[i + 1]);
                 }
+
+                return true;
             }
 
-            tabControl.TabPages.RemoveAt(closingTabPageIndex);
-            SetTabArrayItems(closingTabPageIndex, null, false);
-
-            for (int i = closingTabPageIndex; i < tabControl.TabPages.Count; i++)
-            {
-                _openTabFilePaths[i] = _openTabFilePaths[i + 1];
-                _tabTextBoxModified[i] = _tabTextBoxModified[i + 1];
-            }
+            return false;
         }
 
         private void UpdateTextEditorTab(int pageIndex, string fileName, bool modified)

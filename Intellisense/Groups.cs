@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Compliance.Intellisense
 {
-    public class Simple_Tables
+    public class Groups
     {
         public Dictionary<string, string> _tables = new Dictionary<string, string>()
         {
@@ -17,7 +17,7 @@ namespace Compliance.Intellisense
             {"table 2 syphon", "table_2_syphon"}
         };
 
-        public Dictionary<string, string> _nominalTable = new Dictionary<string, string>()
+        public Dictionary<string, string> _nominal_groups = new Dictionary<string, string>()
         {
             {"Accruals and deferred income", "accruals_and_deferred_income" },
             {"Administrative expenses", "administrative_expenses"},
@@ -34,14 +34,5 @@ namespace Compliance.Intellisense
             {"Aggregated other reserves - Exercise of options, rights and warrants", "aggregated_other_reserves_exercise_of_options_rights_and_warrants"},
             {"Aggregated other reserves - Expired options, rights and warrants", "aggregated_other_reserves_expired_options_rights_and_warrants"}
         };
-
-        public void Test_method_1(string name)
-        {
-        }
-
-        public void Test_method_2(int num)
-        {
-
-        }
     }
 }
