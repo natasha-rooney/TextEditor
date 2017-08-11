@@ -215,14 +215,13 @@ namespace Compliance.Editor
 
                 if (_openTabFilePaths.Contains(fileName))
                 {
-                    var pageIndex = Array.IndexOf(_openTabFilePaths, fileName);
-                    textEditorTabControl.SelectedIndex = pageIndex;
+                    textEditorTabControl.SelectedIndex = Array.IndexOf(_openTabFilePaths, fileName);
                 }
                 else
                 {
                     OpenTab(fileName);
                     ReadFile(openFileDialog);
-                    UpdateTextEditorTabVariables(textEditorTabControl.SelectedIndex, openFileDialog.FileName);
+                    UpdateTextEditorTabText(textEditorTabControl.SelectedIndex, fileName);
                 }
             }
         }
@@ -291,7 +290,7 @@ namespace Compliance.Editor
 
             if (WriteToFile(fileName))
             {
-                UpdateTextEditorTabVariables(pageIndex, fileName);
+                UpdateTextEditorTabText(pageIndex, fileName);
             }
         }
 
@@ -307,7 +306,7 @@ namespace Compliance.Editor
             if ((saveFileDialog.ShowDialog() == DialogResult.OK)
                 && WriteToFile(saveFileDialog.FileName))
             {
-                UpdateTextEditorTabVariables(pageIndex, saveFileDialog.FileName);
+                UpdateTextEditorTabText(pageIndex, saveFileDialog.FileName);
             }
         }
 
@@ -346,7 +345,7 @@ namespace Compliance.Editor
 
             if (textEditorTabControl.TabPages.Count < _maxNumTabs)
             {
-                var tabPage = new TabPage(fileName)
+                var tabPage = new TabPage()
                 {
                     BackColor = Color.White
                 };
@@ -355,8 +354,7 @@ namespace Compliance.Editor
                 textEditorTabControl.SelectedTab = tabPage;
                 textEditorTabControl.DrawItem += new DrawItemEventHandler(TextBoxTabControl_DrawItem);
 
-                _openTabFilePaths[textEditorTabControl.SelectedIndex] = fileName;
-                _tabTextBoxModified[textEditorTabControl.SelectedIndex] = false;
+                UpdateTextEditorTabText(textEditorTabControl.SelectedIndex, fileName);
                 AddRichTextBox(textEditorTabControl, tabPages.Count - 1);
             }
             else
@@ -421,15 +419,30 @@ namespace Compliance.Editor
             }
         }
 
-        private void UpdateTextEditorTabVariables(int pageIndex, string fileName)
+        private void UpdateTextEditorTabText(int pageIndex, string fileName)
         {
-            var filenameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
-            textEditorTabControl.TabPages[textEditorTabControl.SelectedIndex].Text = filenameWithoutExtension;
+            var fileNameWithoutExtension = string.Empty;
+
+            try
+            {
+                fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+            }
+            catch (Exception)
+            {
+                fileNameWithoutExtension = fileName;
+            }
+
+            textEditorTabControl.TabPages[pageIndex].Text = fileNameWithoutExtension;
+            SetUpTabArrayItems(pageIndex, fileName);
+        }
+
+        private void SetUpTabArrayItems(int pageIndex, string fileName)
+        {
             _tabTextBoxModified[pageIndex] = false;
             _openTabFilePaths[pageIndex] = fileName;
         }
         #endregion
 
-        // Update drag and drop menus!!!
+        // TODO: Update drag and drop menus
     }
 }
